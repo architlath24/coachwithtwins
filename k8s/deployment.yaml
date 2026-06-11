@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
       - name: fittwins
-        image: architlath24/fittwins:latest
+        image: fittwins:v3
+        imagePullPolicy: Never
         ports:
         - containerPort: 80
         resources:
