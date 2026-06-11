@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fittwins
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fittwins
+  template:
+    metadata:
+      labels:
+        app: fittwins
+    spec:
+      containers:
+      - name: fittwins
+        image: architlath24/fittwins:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"

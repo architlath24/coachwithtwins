@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitTwins — Intake Form</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #c8f542;
+    --accent2: #ff5533;
+    --gray: #1a1a1a;
+    --gray2: #2a2a2a;
+    --muted: #888;
+    --border: rgba(255,255,255,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .nav-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* HERO */
+  .form-hero {
+    padding: 60px 40px 40px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .form-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 50% 80% at 90% 50%, rgba(200,245,66,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .form-hero-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .form-hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(42px, 7vw, 80px);
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .form-hero-title span { color: var(--accent); }
+  .form-hero-sub {
+    font-size: 15px;
+    color: rgba(245,240,232,0.5);
+    font-weight: 300;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+
+  /* PROGRESS */
+  .progress-wrap {
+    padding: 24px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .progress-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .progress-step.active { color: var(--accent); }
+  .progress-step.done { color: rgba(200,245,66,0.5); }
+  .step-dot {
+    width: 24px; height: 24px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .progress-step.active .step-dot {
+    background: var(--accent);
+    color: var(--black);
+    border-color: var(--accent);
+  }
+  .progress-step.done .step-dot {
+    background: rgba(200,245,66,0.15);
+    border-color: rgba(200,245,66,0.3);
+  }
+  .progress-divider {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    max-width: 40px;
+  }
+  .progress-divider.done { background: rgba(200,245,66,0.2); }
+
+  /* FORM LAYOUT */
+  .form-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: calc(100vh - 280px);
+  }
+
+  .form-sidebar {
+    border-right: 1px solid var(--border);
+    padding: 40px;
+    position: sticky;
+    top: 0;
+    height: fit-content;
+  }
+
+  .sidebar-section {
+    margin-bottom: 32px;
+    opacity: 0.4;
+    transition: opacity 0.3s;
+  }
+  .sidebar-section.active { opacity: 1; }
+
+  .sidebar-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .sidebar-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* FORM MAIN */
+  .form-main {
+    padding: 40px;
+  }
+
+  /* SECTIONS */
+  .form-section {
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+  .form-section.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    line-height: 1;
+  }
+  .section-sub {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 8px;
+    font-weight: 300;
+  }
+
+  /* FIELDS */
+  .fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .fields-grid.single { grid-template-columns: 1fr; }
+  .fields-grid.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .field.full { grid-column: 1 / -1; }
+
+  label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  label span { color: var(--accent); }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  textarea,
+  select {
+    background: var(--gray);
+    border: 1px solid var(--border);
+    color: var(--white);
+    padding: 14px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    border-radius: 2px;
+    outline: none;
+    transition: all 0.2s;
+    width: 100%;
+    -webkit-appearance: none;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    background: rgba(200,245,66,0.03);
+  }
+  input::placeholder, textarea::placeholder { color: rgba(136,136,136,0.5); }
+
+  textarea { resize: vertical; min-height: 100px; }
+
+  select option { background: var(--gray); }
+
+  /* RADIO / CHECKBOX OPTIONS */
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .options-grid.cols3 { grid-template-columns: repeat(3, 1fr); }
+  .options-grid.cols1 { grid-template-columns: 1fr; }
+
+  .option-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--gray);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 300;
+  }
+  .option-label:hover { border-color: rgba(200,245,66,0.3); }
+  .option-label input { display: none; }
+  .option-label.selected {
+    border-color: var(--accent);
+    background: rgba(200,245,66,0.06);
+    color: var(--accent);
+  }
+
+  .option-indicator {
+    width: 16px; height: 16px;
+    border: 1px solid var(--muted);
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .option-label.selected .option-indicator {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+  .option-indicator::after {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--black);
+    display: none;
+  }
+  .option-label.selected .option-indicator::after { display: block; }
+
+  /* Checkbox style */
+  .checkbox-indicator {
+    width: 16px; height: 16px;
+    border: 1px solid var(--muted);
+    border-radius: 2px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    transition: all 0.2s;
+  }
+  .option-label.selected .checkbox-indicator {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--black);
+  }
+
+  /* NAVIGATION BUTTONS */
+  .form-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-back {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 14px 28px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .btn-back:hover { border-color: var(--white); color: var(--white); }
+  .btn-back:disabled { opacity: 0.2; cursor: not-allowed; }
+
+  .btn-next {
+    background: var(--accent);
+    border: none;
+    color: var(--black);
+    padding: 14px 36px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .btn-next:hover { background: #d4ff55; transform: translateY(-1px); }
+
+  .btn-submit {
+    background: var(--accent);
+    border: none;
+    color: var(--black);
+    padding: 16px 48px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    display: none;
+  }
+  .btn-submit:hover { background: #d4ff55; transform: translateY(-1px); box-shadow: 0 8px 30px rgba(200,245,66,0.3); }
+
+  .step-indicator {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* SUCCESS */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 80px 40px;
+    animation: fadeIn 0.6s ease;
+  }
+  .success-screen.show { display: block; }
+
+  .success-icon {
+    width: 80px; height: 80px;
+    background: rgba(200,245,66,0.1);
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 32px;
+  }
+
+  .success-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    margin-bottom: 16px;
+    color: var(--accent);
+  }
+
+  .success-sub {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 400px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .success-next {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--gray);
+    padding: 32px 48px;
+    border: 1px solid var(--border);
+    text-align: left;
+    margin-bottom: 32px;
+  }
+  .success-next-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .success-next-text {
+    font-size: 15px;
+    color: var(--white);
+    font-weight: 300;
+  }
+  .success-next-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .form-hero { padding: 40px 20px 32px; }
+    .progress-wrap { padding: 16px 20px; overflow-x: auto; }
+    .form-layout { grid-template-columns: 1fr; }
+    .form-sidebar { display: none; }
+    .form-main { padding: 24px 20px; }
+    .fields-grid { grid-template-columns: 1fr; }
+    .fields-grid.triple { grid-template-columns: 1fr; }
+    .options-grid { grid-template-columns: 1fr; }
+    .options-grid.cols3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="fittwins.html" class="nav-logo">FITTWINS</a>
+  <div class="nav-tag">// Intake Form</div>
+</nav>
+
+<!-- HERO -->
+<div class="form-hero">
+  <div class="form-hero-tag">// Step 1 of 4 — Tell us about yourself</div>
+  <h1 class="form-hero-title">LET'S GET TO<br><span>KNOW YOU.</span></h1>
+  <p class="form-hero-sub">Fill this out before your consultation call. Takes 3 minutes. The more detail you give us, the better we can help you.</p>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-step active" data-step="1" onclick="goToStep(1)">
+    <div class="step-dot">1</div>
+    <span>Basic Info</span>
+  </div>
+  <div class="progress-divider" id="div1"></div>
+  <div class="progress-step" data-step="2" onclick="goToStep(2)">
+    <div class="step-dot">2</div>
+    <span>Fitness Background</span>
+  </div>
+  <div class="progress-divider" id="div2"></div>
+  <div class="progress-step" data-step="3" onclick="goToStep(3)">
+    <div class="step-dot">3</div>
+    <span>Lifestyle</span>
+  </div>
+  <div class="progress-divider" id="div3"></div>
+  <div class="progress-step" data-step="4" onclick="goToStep(4)">
+    <div class="step-dot">4</div>
+    <span>Commitment</span>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="form-layout">
+
+  <!-- SIDEBAR -->
+  <div class="form-sidebar">
+    <div class="sidebar-section active" id="sb1">
+      <div class="sidebar-num">01</div>
+      <div class="sidebar-title">Basic Info</div>
+    </div>
+    <div class="sidebar-section" id="sb2">
+      <div class="sidebar-num">02</div>
+      <div class="sidebar-title">Fitness Background</div>
+    </div>
+    <div class="sidebar-section" id="sb3">
+      <div class="sidebar-num">03</div>
+      <div class="sidebar-title">Lifestyle</div>
+    </div>
+    <div class="sidebar-section" id="sb4">
+      <div class="sidebar-num">04</div>
+      <div class="sidebar-title">Commitment</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="form-main">
+
+    <!-- SECTION 1 -->
+    <div class="form-section active" id="section1">
+      <div class="section-header">
+        <div class="section-num">// 01 — Basic Info</div>
+        <div class="section-title">WHO ARE YOU?</div>
+        <div class="section-sub">Let's start with the basics so we know who we're talking to.</div>
+      </div>
+
+      <div class="fields-grid">
+        <div class="field">
+          <label>Full Name <span>*</span></label>
+          <input type="text" id="name" placeholder="Your full name" required>
+        </div>
+        <div class="field">
+          <label>Age <span>*</span></label>
+          <input type="number" id="age" placeholder="e.g. 27" min="16" max="70" required>
+        </div>
+      </div>
+
+      <div class="fields-grid">
+        <div class="field">
+          <label>Email Address <span>*</span></label>
+          <input type="email" id="email" placeholder="your@email.com" required>
+        </div>
+        <div class="field">
+          <label>WhatsApp Number <span>*</span></label>
+          <input type="tel" id="phone" placeholder="+91 XXXXX XXXXX" required>
+        </div>
+      </div>
+
+      <div class="fields-grid single">
+        <div class="field">
+          <label>City <span>*</span></label>
+          <div class="options-grid cols3" id="city-options">
+            <label class="option-label" onclick="selectOption(this, 'city', 'bangalore')">
+              <input type="radio" name="city" value="bangalore">
+              <div class="option-indicator"></div>
+              Bangalore
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'city', 'other-india')">
+              <input type="radio" name="city" value="other-india">
+              <div class="option-indicator"></div>
+              Other India
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'city', 'international')">
+              <input type="radio" name="city" value="international">
+              <div class="option-indicator"></div>
+              International
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" disabled>← Back</button>
+        <div class="step-indicator">1 / 4</div>
+        <button class="btn-next" onclick="nextStep(1)">Next →</button>
+      </div>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="form-section" id="section2">
+      <div class="section-header">
+        <div class="section-num">// 02 — Fitness Background</div>
+        <div class="section-title">WHERE ARE<br>YOU NOW?</div>
+        <div class="section-sub">Help us understand your current fitness situation.</div>
+      </div>
+
+      <div class="fields-grid single" style="margin-bottom:24px">
+        <div class="field">
+          <label>Primary Goal <span>*</span></label>
+          <div class="options-grid" id="goal-options">
+            <label class="option-label" onclick="selectOption(this, 'goal', 'fat-loss')">
+              <input type="radio" name="goal" value="fat-loss">
+              <div class="option-indicator"></div>
+              Fat Loss
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'goal', 'muscle-gain')">
+              <input type="radio" name="goal" value="muscle-gain">
+              <div class="option-indicator"></div>
+              Muscle Gain
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'goal', 'both')">
+              <input type="radio" name="goal" value="both">
+              <div class="option-indicator"></div>
+              Both (Recomposition)
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'goal', 'general')">
+              <input type="radio" name="goal" value="general">
+              <div class="option-indicator"></div>
+              General Fitness & Health
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="fields-grid single" style="margin-bottom:24px">
+        <div class="field">
+          <label>Current Activity Level <span>*</span></label>
+          <div class="options-grid cols1" id="activity-options">
+            <label class="option-label" onclick="selectOption(this, 'activity', 'sedentary')">
+              <input type="radio" name="activity" value="sedentary">
+              <div class="option-indicator"></div>
+              Sedentary — desk job, little to no exercise
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'activity', 'light')">
+              <input type="radio" name="activity" value="light">
+              <div class="option-indicator"></div>
+              Lightly Active — occasional walks, 1-2 workouts/week
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'activity', 'moderate')">
+              <input type="radio" name="activity" value="moderate">
+              <div class="option-indicator"></div>
+              Moderately Active — 3-4 workouts/week
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'activity', 'very')">
+              <input type="radio" name="activity" value="very">
+              <div class="option-indicator"></div>
+              Very Active — 5+ workouts/week, physically demanding job
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="fields-grid single">
+        <div class="field">
+          <label>Any injuries or medical conditions we should know about?</label>
+          <textarea id="injuries" placeholder="e.g. lower back pain, knee injury, diabetes... or type 'None'"></textarea>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="prevStep(2)">← Back</button>
+        <div class="step-indicator">2 / 4</div>
+        <button class="btn-next" onclick="nextStep(2)">Next →</button>
+      </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="form-section" id="section3">
+      <div class="section-header">
+        <div class="section-num">// 03 — Lifestyle</div>
+        <div class="section-title">HOW DO YOU<br>LIVE & WORK?</div>
+        <div class="section-sub">We design everything around your lifestyle, not the other way around.</div>
+      </div>
+
+      <div class="fields-grid single" style="margin-bottom:24px">
+        <div class="field">
+          <label>Occupation <span>*</span></label>
+          <div class="options-grid cols3" id="occ-options">
+            <label class="option-label" onclick="selectOption(this, 'occ', 'it')">
+              <input type="radio" name="occ" value="it">
+              <div class="option-indicator"></div>
+              IT / Tech
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'occ', 'business')">
+              <input type="radio" name="occ" value="business">
+              <div class="option-indicator"></div>
+              Business / Entrepreneur
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'occ', 'student')">
+              <input type="radio" name="occ" value="student">
+              <div class="option-indicator"></div>
+              Student
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'occ', 'corporate')">
+              <input type="radio" name="occ" value="corporate">
+              <div class="option-indicator"></div>
+              Corporate / Finance
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'occ', 'healthcare')">
+              <input type="radio" name="occ" value="healthcare">
+              <div class="option-indicator"></div>
+              Healthcare
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'occ', 'other')">
+              <input type="radio" name="occ" value="other">
+              <div class="option-indicator"></div>
+              Other
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="fields-grid single" style="margin-bottom:24px">
+        <div class="field">
+          <label>Training days per week you can commit to <span>*</span></label>
+          <div class="options-grid cols3" id="days-options">
+            <label class="option-label" onclick="selectOption(this, 'days', '2')">
+              <input type="radio" name="days" value="2">
+              <div class="option-indicator"></div>
+              2 days
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'days', '3')">
+              <input type="radio" name="days" value="3">
+              <div class="option-indicator"></div>
+              3 days
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'days', '4')">
+              <input type="radio" name="days" value="4">
+              <div class="option-indicator"></div>
+              4 days
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'days', '5')">
+              <input type="radio" name="days" value="5">
+              <div class="option-indicator"></div>
+              5 days
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'days', '6+')">
+              <input type="radio" name="days" value="6+">
+              <div class="option-indicator"></div>
+              6+ days
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="fields-grid single">
+        <div class="field">
+          <label>Dietary preference <span>*</span></label>
+          <div class="options-grid cols3" id="diet-options">
+            <label class="option-label" onclick="selectOption(this, 'diet', 'nonveg')">
+              <input type="radio" name="diet" value="nonveg">
+              <div class="option-indicator"></div>
+              Non-Vegetarian
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'diet', 'veg')">
+              <input type="radio" name="diet" value="veg">
+              <div class="option-indicator"></div>
+              Vegetarian
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'diet', 'vegan')">
+              <input type="radio" name="diet" value="vegan">
+              <div class="option-indicator"></div>
+              Vegan
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="prevStep(3)">← Back</button>
+        <div class="step-indicator">3 / 4</div>
+        <button class="btn-next" onclick="nextStep(3)">Next →</button>
+      </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="form-section" id="section4">
+      <div class="section-header">
+        <div class="section-num">// 04 — Commitment</div>
+        <div class="section-title">ARE YOU<br>READY?</div>
+        <div class="section-sub">Last few questions. This helps us understand where you are mentally and financially.</div>
+      </div>
+
+      <div class="fields-grid single" style="margin-bottom:24px">
+        <div class="field">
+          <label>Monthly budget for coaching <span>*</span></label>
+          <div class="options-grid cols1" id="budget-options">
+            <label class="option-label" onclick="selectOption(this, 'budget', '3-5k')">
+              <input type="radio" name="budget" value="3-5k">
+              <div class="option-indicator"></div>
+              ₹3,000 – ₹5,000 / month
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'budget', '5-8k')">
+              <input type="radio" name="budget" value="5-8k">
+              <div class="option-indicator"></div>
+              ₹5,000 – ₹8,000 / month
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'budget', '8k+')">
+              <input type="radio" name="budget" value="8k+">
+              <div class="option-indicator"></div>
+              ₹8,000+ / month — I want the best
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="fields-grid single" style="margin-bottom:24px">
+        <div class="field">
+          <label>How soon are you looking to start? <span>*</span></label>
+          <div class="options-grid cols3" id="start-options">
+            <label class="option-label" onclick="selectOption(this, 'start', 'asap')">
+              <input type="radio" name="start" value="asap">
+              <div class="option-indicator"></div>
+              ASAP
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'start', '1-2weeks')">
+              <input type="radio" name="start" value="1-2weeks">
+              <div class="option-indicator"></div>
+              1–2 weeks
+            </label>
+            <label class="option-label" onclick="selectOption(this, 'start', 'this-month')">
+              <input type="radio" name="start" value="this-month">
+              <div class="option-indicator"></div>
+              This month
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="fields-grid single">
+        <div class="field">
+          <label>Anything else you want us to know before the call?</label>
+          <textarea id="notes" placeholder="Share anything that will help us come prepared — your struggles, past attempts, specific questions..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="prevStep(4)">← Back</button>
+        <div class="step-indicator">4 / 4</div>
+        <button class="btn-submit" id="submitBtn" onclick="submitForm()">Submit & Book Call →</button>
+        <button class="btn-next" onclick="nextStep(4)" style="display:none" id="nextBtn4">Next →</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-icon">✓</div>
+      <div class="success-title">YOU'RE IN.</div>
+      <p class="success-sub">Form received! Complete your booking in 2 steps below.</p>
+
+      <!-- STEP 1: PAY -->
+      <div style="background:var(--gray);border:1px solid rgba(255,255,255,0.08);padding:28px;margin-bottom:16px;max-width:420px;margin-left:auto;margin-right:auto;border-radius:4px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:16px;">Step 1 — Pay ₹999 Consultation Fee</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+          <div style="font-size:48px;">💳</div>
+          <p style="font-size:13px;color:var(--muted);text-align:center;line-height:1.6;">Choose your UPI app — amount is pre-filled automatically.</p>
+          
+          <!-- GPay -->
+          <a href="gpay://upi/pay?pa=7018921587@ptaxis&pn=FitTwins&am=999&cu=INR&tn=FitTwins+Consultation+Fee"
+             style="display:block;width:100%;text-align:center;background:#4285F4;color:#fff;padding:14px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:1px;font-weight:700;border-radius:4px;text-decoration:none;margin-bottom:8px;">
+            Google Pay
+          </a>
+
+          <!-- PhonePe -->
+          <a href="phonepe://pay?pa=7018921587@ptaxis&pn=FitTwins&am=999&cu=INR&tn=FitTwins+Consultation+Fee"
+             style="display:block;width:100%;text-align:center;background:#5f259f;color:#fff;padding:14px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:1px;font-weight:700;border-radius:4px;text-decoration:none;margin-bottom:8px;">
+            PhonePe
+          </a>
+
+          <!-- Paytm -->
+          <a href="paytmmp://pay?pa=7018921587@ptaxis&pn=FitTwins&am=999&cu=INR&tn=FitTwins+Consultation+Fee"
+             style="display:block;width:100%;text-align:center;background:#00BAF2;color:#000;padding:14px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:1px;font-weight:700;border-radius:4px;text-decoration:none;margin-bottom:8px;">
+            Paytm
+          </a>
+
+          <!-- Generic UPI fallback -->
+          <a href="upi://pay?pa=7018921587@ptaxis&pn=FitTwins&am=999&cu=INR&tn=FitTwins+Consultation+Fee"
+             style="display:block;width:100%;text-align:center;background:var(--gray2);color:var(--white);padding:14px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:1px;font-weight:700;border-radius:4px;text-decoration:none;border:1px solid rgba(255,255,255,0.1);">
+            Other UPI App
+          </a>
+
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:center;margin-top:8px;">
+            Manual UPI ID: <span style="color:var(--accent);">7018921587@ptaxis</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: WHATSAPP -->
+      <div style="background:var(--gray);border:1px solid rgba(255,255,255,0.08);padding:28px;max-width:420px;margin-left:auto;margin-right:auto;border-radius:4px;margin-bottom:24px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:12px;">Step 2 — Send Us Your Details on WhatsApp</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;">Click below — your form summary is pre-typed and ready to send. Just hit send!</p>
+        <a id="whatsappBtn" href="#" target="_blank" style="display:block;text-align:center;background:#25D366;color:#000;padding:14px 24px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:700;border-radius:4px;text-decoration:none;">💬 Send on WhatsApp</a>
+      </div>
+
+      <a href="index.html" style="display:inline-block;margin-top:8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;text-decoration:none;text-transform:uppercase;">← Back to Home</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let currentStep = 1;
+  const totalSteps = 4;
+  const formData = {};
+
+  function selectOption(el, group, value) {
+    // Deselect all in group
+    const container = el.closest('.options-grid') || el.parentElement;
+    container.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
+    el.classList.add('selected');
+    formData[group] = value;
+  }
+
+  function updateProgress(step) {
+    document.querySelectorAll('.progress-step').forEach((s, i) => {
+      s.classList.remove('active', 'done');
+      if (i + 1 === step) s.classList.add('active');
+      if (i + 1 < step) s.classList.add('done');
+    });
+    for (let i = 1; i <= 3; i++) {
+      const div = document.getElementById('div' + i);
+      if (div) {
+        div.classList.toggle('done', i < step);
+      }
+    }
+    // Update sidebar
+    for (let i = 1; i <= 4; i++) {
+      const sb = document.getElementById('sb' + i);
+      if (sb) sb.classList.toggle('active', i === step);
+    }
+    // Update hero tag
+    document.querySelector('.form-hero-tag').textContent = `// Step ${step} of 4 — ${['Tell us about yourself','Your fitness background','Your lifestyle','Your commitment'][step-1]}`;
+  }
+
+  function nextStep(from) {
+    if (!validateStep(from)) return;
+    if (from < totalSteps) {
+      document.getElementById('section' + from).classList.remove('active');
+      currentStep = from + 1;
+      document.getElementById('section' + currentStep).classList.add('active');
+      updateProgress(currentStep);
+      // Show submit on last step
+      if (currentStep === 4) {
+        document.getElementById('submitBtn').style.display = 'block';
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function prevStep(from) {
+    if (from > 1) {
+      document.getElementById('section' + from).classList.remove('active');
+      currentStep = from - 1;
+      document.getElementById('section' + currentStep).classList.add('active');
+      updateProgress(currentStep);
+      if (from === 4) {
+        document.getElementById('submitBtn').style.display = 'none';
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function goToStep(step) {
+    if (step <= currentStep) {
+      document.getElementById('section' + currentStep).classList.remove('active');
+      currentStep = step;
+      document.getElementById('section' + currentStep).classList.add('active');
+      updateProgress(currentStep);
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn) submitBtn.style.display = currentStep === 4 ? 'block' : 'none';
+    }
+  }
+
+  function validateStep(step) {
+    if (step === 1) {
+      const name = document.getElementById('name').value.trim();
+      const age = document.getElementById('age').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      if (!name || !age || !email || !phone) {
+        alert('Please fill in all required fields.');
+        return false;
+      }
+      if (!formData['city']) {
+        alert('Please select your city.');
+        return false;
+      }
+      formData.name = name;
+      formData.age = age;
+      formData.email = email;
+      formData.phone = phone;
+    }
+    if (step === 2) {
+      if (!formData['goal']) { alert('Please select your primary goal.'); return false; }
+      if (!formData['activity']) { alert('Please select your activity level.'); return false; }
+      formData.injuries = document.getElementById('injuries').value.trim();
+    }
+    if (step === 3) {
+      if (!formData['occ']) { alert('Please select your occupation.'); return false; }
+      if (!formData['days']) { alert('Please select training days.'); return false; }
+      if (!formData['diet']) { alert('Please select your dietary preference.'); return false; }
+    }
+    if (step === 4) {
+      if (!formData['budget']) { alert('Please select your budget range.'); return false; }
+      if (!formData['start']) { alert('Please select when you want to start.'); return false; }
+    }
+    return true;
+  }
+
+  function submitForm() {
+    if (!validateStep(4)) return;
+    formData.notes = document.getElementById('notes').value.trim();
+
+    // Build WhatsApp message from form data
+    const goalMap = {'fat-loss':'Fat Loss','muscle-gain':'Muscle Gain','both':'Body Recomposition','general':'General Fitness'};
+    const activityMap = {'sedentary':'Sedentary','light':'Lightly Active','moderate':'Moderately Active','very':'Very Active'};
+    const occMap = {'it':'IT/Tech','business':'Business/Entrepreneur','student':'Student','corporate':'Corporate/Finance','healthcare':'Healthcare','other':'Other'};
+    const gymMap = {'commercial':'Commercial Gym','home-full':'Home Gym (full)','home-minimal':'Home (minimal)','fittwins':'FitTwins Gym (Bangalore)'};
+    const budgetMap = {'3-5k':'₹3,000–₹5,000/month','5-8k':'₹5,000–₹8,000/month','8k+':'₹8,000+/month'};
+    const startMap = {'asap':'ASAP','1-2weeks':'1–2 weeks','this-month':'This month'};
+    const sourceMap = {'instagram':'Instagram','referral':'Friend/Referral','google':'Google','other':'Other'};
+
+    const msg = `Hi FitTwins! I just filled your intake form. Here is my profile:
+
+---------------------------
+PERSONAL INFO
+---------------------------
+Name: ${formData.name || '-'}
+Age: ${formData.age || '-'}
+Email: ${formData.email || '-'}
+WhatsApp: ${formData.phone || '-'}
+City: ${formData.city || '-'}
+
+---------------------------
+FITNESS PROFILE
+---------------------------
+Goal: ${goalMap[formData.goal] || '-'}
+Activity Level: ${activityMap[formData.activity] || '-'}
+${formData.injuries ? `Medical Notes: ${formData.injuries}` : 'Medical Notes: None'}
+
+---------------------------
+LIFESTYLE
+---------------------------
+Occupation: ${occMap[formData.occ] || '-'}
+Training Days: ${formData.days || '-'} days/week
+Diet: ${formData.diet || '-'}
+
+---------------------------
+COMMITMENT
+---------------------------
+Budget: ${budgetMap[formData.budget] || '-'}
+Start Date: ${startMap[formData.start] || '-'}
+${formData.notes ? `Additional Info: ${formData.notes}` : ''}
+
+---------------------------
+I have paid Rs.999 consultation fee via UPI (7018921587@ptaxis). Please confirm and share the next steps. Looking forward to connecting!`;
+
+    const waUrl = `https://wa.me/917018921587?text=${encodeURIComponent(msg)}`;
+    document.getElementById('whatsappBtn').href = waUrl;
+
+    // Show success
+    document.getElementById('section4').classList.remove('active');
+    document.getElementById('successScreen').classList.add('show');
+    document.querySelector('.form-hero-tag').textContent = '// Form submitted successfully';
+    document.querySelector('.progress-wrap').style.opacity = '0.3';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>

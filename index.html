@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitTwins — Two Coaches. One Goal.</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #c8f542;
+    --accent2: #ff5533;
+    --gray: #1a1a1a;
+    --gray2: #2a2a2a;
+    --muted: #888;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--accent);
+  }
+
+  .nav-cta {
+    background: var(--accent);
+    color: var(--black);
+    padding: 10px 24px;
+    border-radius: 2px;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .nav-cta:hover { background: #d4ff55; transform: translateY(-1px); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 40px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 80% 50%, rgba(200,245,66,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 10% 80%, rgba(255,85,51,0.05) 0%, transparent 60%);
+  }
+
+  .hero-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.2s;
+  }
+
+  .hero-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 12vw, 160px);
+    line-height: 0.92;
+    letter-spacing: 2px;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+
+  .hero-headline .accent { color: var(--accent); }
+  .hero-headline .outline {
+    -webkit-text-stroke: 2px var(--white);
+    color: transparent;
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: rgba(245,240,232,0.6);
+    max-width: 480px;
+    line-height: 1.6;
+    margin-bottom: 48px;
+    font-weight: 300;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.6s;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.8s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--black);
+    padding: 16px 36px;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: all 0.2s;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: #d4ff55; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(200,245,66,0.3); }
+
+  .btn-secondary {
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--white);
+    padding: 16px 36px;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: all 0.2s;
+    display: inline-block;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .hero-stats {
+    position: absolute;
+    right: 40px;
+    bottom: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 1s;
+  }
+
+  .stat-item { text-align: right; }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* MARQUEE */
+  .marquee-wrap {
+    background: var(--accent);
+    padding: 14px 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .marquee-track {
+    display: inline-block;
+    animation: marquee 20s linear infinite;
+  }
+  .marquee-track span {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 3px;
+    color: var(--black);
+    padding: 0 40px;
+  }
+  .marquee-track span.dot { color: var(--accent2); }
+
+  /* TWIN ADVANTAGE */
+  .section { padding: 100px 40px; }
+
+  .section-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(42px, 6vw, 80px);
+    line-height: 1;
+    margin-bottom: 60px;
+  }
+
+  .twin-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    max-width: 900px;
+  }
+
+  .twin-card {
+    background: var(--gray);
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .twin-card:hover { background: var(--gray2); transform: translateY(-4px); }
+
+  .twin-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .twin-card.training::before { background: var(--accent); }
+  .twin-card.nutrition::before { background: var(--accent2); }
+
+  .twin-role {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .twin-card.training .twin-role { color: var(--accent); }
+  .twin-card.nutrition .twin-role { color: var(--accent2); }
+
+  .twin-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    margin-bottom: 16px;
+  }
+
+  .twin-desc {
+    font-size: 15px;
+    color: rgba(245,240,232,0.6);
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .twin-certs {
+    margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .cert-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 2px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* HOW IT WORKS */
+  .how-section {
+    padding: 100px 40px;
+    background: var(--gray);
+  }
+
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 60px;
+  }
+
+  .step {
+    background: var(--black);
+    padding: 48px 36px;
+    position: relative;
+  }
+
+  .step-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    color: rgba(200,245,66,0.1);
+    line-height: 1;
+    margin-bottom: 24px;
+  }
+
+  .step-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    margin-bottom: 12px;
+    color: var(--white);
+  }
+
+  .step-desc {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .step-price {
+    display: inline-block;
+    margin-top: 16px;
+    background: var(--accent);
+    color: var(--black);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 4px 12px;
+    font-weight: 500;
+  }
+
+  /* PACKAGES */
+  .packages-section { padding: 100px 40px; }
+
+  .packages-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    margin-top: 60px;
+  }
+
+  .package-card {
+    background: var(--gray);
+    padding: 48px 40px;
+    position: relative;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+  }
+  .package-card:hover { border-color: rgba(200,245,66,0.2); transform: translateY(-4px); }
+  .package-card.featured {
+    background: var(--accent);
+    color: var(--black);
+  }
+
+  .package-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .package-card.featured .package-badge { color: var(--black); opacity: 0.6; }
+
+  .package-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    margin-bottom: 8px;
+  }
+
+  .package-price {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    line-height: 1;
+    margin-bottom: 4px;
+    color: var(--accent);
+  }
+  .package-card.featured .package-price { color: var(--black); }
+
+  .package-period {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    font-family: 'DM Mono', monospace;
+  }
+  .package-card.featured .package-period { color: rgba(0,0,0,0.5); }
+
+  .package-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin-bottom: 28px;
+  }
+  .package-card.featured .package-divider { background: rgba(0,0,0,0.15); }
+
+  .package-features { list-style: none; margin-bottom: 40px; }
+  .package-features li {
+    font-size: 14px;
+    padding: 8px 0;
+    color: rgba(245,240,232,0.7);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-weight: 300;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .package-card.featured .package-features li { color: rgba(0,0,0,0.75); border-bottom-color: rgba(0,0,0,0.08); }
+  .package-features li::before { content: '→'; color: var(--accent); font-size: 12px; margin-top: 2px; flex-shrink: 0; }
+  .package-card.featured .package-features li::before { color: var(--black); }
+
+  .package-cta {
+    display: block;
+    text-align: center;
+    padding: 14px;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: all 0.2s;
+    border: 1px solid rgba(200,245,66,0.3);
+    color: var(--accent);
+  }
+  .package-cta:hover { background: var(--accent); color: var(--black); }
+  .package-card.featured .package-cta {
+    background: var(--black);
+    color: var(--accent);
+    border-color: var(--black);
+  }
+  .package-card.featured .package-cta:hover { background: var(--gray); }
+
+  /* TECH SECTION */
+  .tech-section {
+    padding: 100px 40px;
+    background: var(--gray);
+  }
+
+  .tech-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    margin-top: 60px;
+  }
+
+  .tech-features { display: flex; flex-direction: column; gap: 24px; }
+
+  .tech-feature {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 24px;
+    background: var(--black);
+    border-left: 2px solid var(--accent);
+  }
+
+  .tech-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .tech-feature-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+
+  .tech-feature-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .tech-visual {
+    background: var(--black);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 32px;
+    text-align: center;
+  }
+
+  .phone-mock {
+    width: 200px;
+    height: 360px;
+    background: var(--gray2);
+    border-radius: 28px;
+    margin: 0 auto;
+    border: 6px solid rgba(255,255,255,0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .phone-top {
+    background: var(--accent);
+    padding: 16px;
+    text-align: center;
+  }
+  .phone-top-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--black);
+    letter-spacing: 2px;
+  }
+
+  .phone-content { padding: 16px; flex: 1; }
+
+  .phone-workout {
+    background: rgba(200,245,66,0.1);
+    border-left: 3px solid var(--accent);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border-radius: 2px;
+  }
+  .phone-workout-name { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+  .phone-workout-detail { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  .phone-check {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .check-box {
+    width: 16px; height: 16px;
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .check-label { font-size: 10px; color: var(--muted); }
+
+  /* TESTIMONIALS */
+  .testimonials-section { padding: 100px 40px; }
+
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 60px;
+  }
+
+  .testimonial {
+    background: var(--gray);
+    padding: 40px 32px;
+  }
+
+  .testimonial-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: rgba(245,240,232,0.8);
+    font-weight: 300;
+    font-style: italic;
+    margin-bottom: 28px;
+  }
+
+  .testimonial-author {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .testimonial-role {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1px;
+  }
+
+  .testimonial-result {
+    display: inline-block;
+    margin-top: 16px;
+    background: rgba(200,245,66,0.1);
+    border: 1px solid rgba(200,245,66,0.2);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    letter-spacing: 1px;
+  }
+
+  /* CTA SECTION */
+  .cta-section {
+    padding: 120px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(200,245,66,0.06) 0%, transparent 70%);
+  }
+
+  .cta-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 8vw, 100px);
+    line-height: 1;
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .cta-sub {
+    font-size: 18px;
+    color: var(--muted);
+    margin-bottom: 48px;
+    font-weight: 300;
+    position: relative;
+  }
+
+  .cta-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .upi-box {
+    margin-top: 48px;
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--gray);
+    padding: 16px 28px;
+    border: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+  }
+  .upi-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .upi-id {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 48px 40px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 3px;
+    color: var(--accent);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 32px;
+  }
+
+  .footer-links a {
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--accent); }
+
+  .footer-copy {
+    font-size: 12px;
+    color: rgba(136,136,136,0.5);
+    font-family: 'DM Mono', monospace;
+    width: 100%;
+    text-align: center;
+    margin-top: 20px;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .hero { padding: 100px 20px 60px; }
+    .hero-stats { position: static; margin-top: 48px; flex-direction: row; flex-wrap: wrap; gap: 24px; }
+    .stat-item { text-align: left; }
+    .section { padding: 60px 20px; }
+    .twin-grid { grid-template-columns: 1fr; }
+    .how-section { padding: 60px 20px; }
+    .steps-grid { grid-template-columns: 1fr; }
+    .packages-section { padding: 60px 20px; }
+    .packages-grid { grid-template-columns: 1fr; }
+    .tech-section { padding: 60px 20px; }
+    .tech-grid { grid-template-columns: 1fr; }
+    .testimonials-section { padding: 60px 20px; }
+    .testimonials-grid { grid-template-columns: 1fr; }
+    .cta-section { padding: 80px 20px; }
+    footer { padding: 40px 20px; flex-direction: column; align-items: flex-start; }
+    .footer-links { flex-wrap: wrap; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">FITTWINS</div>
+  <a href="#consult" class="nav-cta">Book Consultation</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-tag">// Bangalore · India · Worldwide Online</div>
+  <h1 class="hero-headline">
+    TWO<br>
+    <span class="accent">COACHES.</span><br>
+    <span class="outline">ONE GOAL.</span>
+  </h1>
+  <p class="hero-sub">Science-backed fitness coaching by twin specialists — one dedicated to your training, one to your nutrition. Nothing left to chance.</p>
+  <div class="hero-actions">
+    <a href="#consult" class="btn-primary">Book Consultation — ₹999</a>
+    <a href="#packages" class="btn-secondary">View Packages</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num">100+</div>
+      <div class="stat-label">Clients Transformed</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">7+</div>
+      <div class="stat-label">Years Experience</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">5+</div>
+      <div class="stat-label">Certifications</div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span>ISSA CERTIFIED</span><span class="dot">✦</span>
+    <span>PN NUTRITION</span><span class="dot">✦</span>
+    <span>GMSA CERTIFIED</span><span class="dot">✦</span>
+    <span>AMAN DUGGAL</span><span class="dot">✦</span>
+    <span>100+ TRANSFORMATIONS</span><span class="dot">✦</span>
+    <span>SCIENCE BASED</span><span class="dot">✦</span>
+    <span>ISSA CERTIFIED</span><span class="dot">✦</span>
+    <span>PN NUTRITION</span><span class="dot">✦</span>
+    <span>GMSA CERTIFIED</span><span class="dot">✦</span>
+    <span>AMAN DUGGAL</span><span class="dot">✦</span>
+    <span>100+ TRANSFORMATIONS</span><span class="dot">✦</span>
+    <span>SCIENCE BASED</span><span class="dot">✦</span>
+  </div>
+</div>
+
+<!-- TWIN ADVANTAGE -->
+<section class="section">
+  <div class="section-tag reveal">// The Twin Advantage</div>
+  <h2 class="section-title reveal">YOU GET<br><span style="color:var(--accent)">TWO EXPERTS</span><br>NOT ONE.</h2>
+  <div class="twin-grid reveal">
+    <div class="twin-card training">
+      <div class="twin-role">Training Coach</div>
+      <div class="twin-name">ANCHIT LATH</div>
+      <p class="twin-desc">Your dedicated strength and performance coach. Builds your custom workout plan, tracks every session, corrects your form, and makes sure you're progressing — week after week.</p>
+      <div class="twin-certs">
+        <span class="cert-tag">ISSA</span>
+        <span class="cert-tag">GMSA</span>
+        <span class="cert-tag">AMAN DUGGAL</span>
+      </div>
+    </div>
+    <div class="twin-card nutrition">
+      <div class="twin-role">Nutrition Coach</div>
+      <div class="twin-name">ARCHIT LATH</div>
+      <p class="twin-desc">Your dedicated nutrition specialist. Designs your meal plan around your lifestyle, tracks your macros, adjusts based on results, and makes eating right feel effortless.</p>
+      <div class="twin-certs">
+        <span class="cert-tag">PN NUTRITION</span>
+        <span class="cert-tag">ISSA NUTRITION</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section">
+  <div class="section-tag reveal">// How It Works</div>
+  <h2 class="section-title reveal">THREE STEPS<br>TO START.</h2>
+  <div class="steps-grid reveal">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-title">Fill the Form</div>
+      <p class="step-desc">Tell us your goals, lifestyle, and current fitness level. Takes 2 minutes. This helps us come fully prepared for your call.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-title">Book Your Call</div>
+      <p class="step-desc">Jump on a Google Meet with both twins. We'll assess your goals and show you exactly how we'll get you there.</p>
+      <span class="step-price">₹999 Consultation</span>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-title">Start Transforming</div>
+      <p class="step-desc">Your custom plan goes live on our app. Track workouts, check off sets, log meals — everything in one place. Just show up.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PACKAGES -->
+<section class="packages-section" id="packages">
+  <div class="section-tag reveal">// Coaching Packages</div>
+  <h2 class="section-title reveal">TWO PLANS.<br><span style="color:var(--accent)">ZERO FLUFF.</span></h2>
+  <p class="reveal" style="color:var(--muted);font-size:15px;font-weight:300;margin-top:-32px;margin-bottom:48px;max-width:520px;">No confusing tiers. Just full coaching by both twins — training AND nutrition — built around your life.</p>
+
+  <div class="packages-grid reveal">
+
+    <!-- ONLINE -->
+    <div class="package-card featured">
+      <div class="package-badge">// Online · Worldwide</div>
+      <div class="package-name">Full Coaching</div>
+
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
+        <div class="package-price">₹12K</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(0,0,0,0.5);text-decoration:line-through;">₹14K</div>
+      </div>
+      <div class="package-period">per month · minimum 3 months</div>
+
+      <!-- VALUE TAG -->
+      <div style="display:inline-block;background:rgba(0,0,0,0.12);border-radius:2px;padding:6px 12px;margin:12px 0 20px;font-family:'DM Mono',monospace;font-size:11px;color:rgba(0,0,0,0.7);letter-spacing:1px;">
+        💡 That's just ₹400/day — less than your daily coffee + lunch
+      </div>
+
+      <div class="package-divider"></div>
+
+      <!-- 3 MONTH DEAL -->
+      <div style="background:rgba(0,0,0,0.1);padding:14px 16px;margin-bottom:20px;border-radius:2px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(0,0,0,0.5);margin-bottom:4px;">3 MONTH PACKAGE — SAVE 10%</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--black);">₹32,400 <span style="font-size:14px;font-family:'DM Sans',sans-serif;font-weight:300;">instead of ₹36,000</span></div>
+        <div style="font-size:12px;color:rgba(0,0,0,0.5);margin-top:2px;">You save ₹3,600 — commit to results, save money</div>
+      </div>
+
+      <ul class="package-features">
+        <li>Custom workout plan on the FitTwins app</li>
+        <li>Check off sets & reps — we track everything live</li>
+        <li>Dedicated training coach (Twin 01) — ISSA certified</li>
+        <li>Dedicated nutrition coach (Twin 02) — PN Nutrition certified</li>
+        <li>Bi-weekly progress check-in call (Google Meet)</li>
+        <li>Progress photo & body metric tracking every 2 weeks</li>
+        <li>Video form correction feedback</li>
+        <li>Weekly automated check-in via app</li>
+        <li>WhatsApp support for quick questions</li>
+        <li>Plan adjusted every month based on your data</li>
+      </ul>
+      <a href="#consult" class="package-cta">Book Consultation — ₹999</a>
+    </div>
+
+    <!-- OFFLINE -->
+    <div class="package-card">
+      <div class="package-badge">// Offline · Bangalore Only</div>
+      <div class="package-name">In-Person Training</div>
+
+      <div class="package-price" style="color:var(--accent);">₹49,999</div>
+      <div class="package-period">for 3 months · 12 sessions/month · 36 sessions total</div>
+
+      <!-- VALUE TAG -->
+      <div style="display:inline-block;background:rgba(200,245,66,0.08);border:1px solid rgba(200,245,66,0.2);border-radius:2px;padding:6px 12px;margin:12px 0 20px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:1px;">
+        💡 Just ₹1,389/session — TWO coaches + pre/post workout included
+      </div>
+
+      <div class="package-divider"></div>
+
+      <!-- COMPARISON -->
+      <div style="background:var(--gray2);padding:14px 16px;margin-bottom:24px;border-radius:2px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">VS BANGALORE GYM PT</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(245,240,232,0.6);margin-bottom:4px;">
+          <span>Regular gym PT (1 coach, no nutrition)</span>
+          <span style="color:var(--accent2);">₹1,500–₹2,500/session</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;">
+          <span style="color:var(--white);">FitTwins (2 coaches + everything)</span>
+          <span style="color:var(--accent);font-weight:700;">₹1,389/session</span>
+        </div>
+      </div>
+
+      <!-- EXPERIENCE TABS -->
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:14px;">What your session includes</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;">
+
+        <div style="background:var(--gray2);padding:14px;border-radius:2px;border-top:2px solid var(--accent);">
+          <div style="font-size:20px;margin-bottom:6px;">🏋️</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">Full Home Gym</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5;">Bench press, deadlift, rows, treadmill, elliptical — every exercise you need</div>
+        </div>
+
+        <div style="background:var(--gray2);padding:14px;border-radius:2px;border-top:2px solid var(--accent);">
+          <div style="font-size:20px;margin-bottom:6px;">🧊</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">Weekly Ice Bath</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5;">Science-backed cold therapy for faster recovery — once a week included</div>
+        </div>
+
+        <div style="background:var(--gray2);padding:14px;border-radius:2px;border-top:2px solid var(--accent);">
+          <div style="font-size:20px;margin-bottom:6px;">⚡</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">Pre-Workout</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5;">Pre-workout supplement provided before every session — no need to bring anything</div>
+        </div>
+
+        <div style="background:var(--gray2);padding:14px;border-radius:2px;border-top:2px solid var(--accent);">
+          <div style="font-size:20px;margin-bottom:6px;">🥤</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">Post-Workout Protein</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5;">Protein shake after every session — recovery starts immediately</div>
+        </div>
+
+        <div style="background:var(--gray2);padding:14px;border-radius:2px;border-top:2px solid var(--accent);">
+          <div style="font-size:20px;margin-bottom:6px;">👬</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">Both Twins With You</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5;">Two certified coaches present every single session. Double the attention, double the results.</div>
+        </div>
+
+        <div style="background:var(--gray2);padding:14px;border-radius:2px;border-top:2px solid var(--accent);">
+          <div style="font-size:20px;margin-bottom:6px;">🎵</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">Your Music, Your Vibe</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5;">Play your own playlist. This is your space — train how you like, no judgment.</div>
+        </div>
+
+      </div>
+
+      <ul class="package-features">
+        <li>Custom nutrition plan — PN certified coach</li>
+        <li>Alternate day training — science-backed recovery</li>
+        <li>Progress tracking on the FitTwins app</li>
+        <li>Body metrics & progress photos every 2 weeks</li>
+        <li>WhatsApp support between sessions</li>
+      </ul>
+      <a href="#consult" class="package-cta">Book Consultation — ₹999</a>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NOTE -->
+  <div class="reveal" style="margin-top:32px;padding:24px 32px;background:var(--gray);border-left:3px solid var(--accent);max-width:700px;">
+    <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--accent);margin-bottom:8px;">// WHY 3 MONTHS?</div>
+    <p style="font-size:14px;color:rgba(245,240,232,0.6);font-weight:300;line-height:1.7;">Your body takes 4–6 weeks just to adapt. Real, visible transformation happens at 8–12 weeks. We only take clients who are serious about results — 3 months is the minimum because anything less is just scratching the surface.</p>
+  </div>
+
+</section>
+
+<!-- TECH -->
+<section class="tech-section">
+  <div class="section-tag reveal">// The Tech Experience</div>
+  <h2 class="section-title reveal">COACHING THAT<br><span style="color:var(--accent)">FITS YOUR PHONE.</span></h2>
+  <div class="tech-grid reveal">
+    <div class="tech-features">
+      <div class="tech-feature">
+        <div class="tech-icon">✓</div>
+        <div>
+          <div class="tech-feature-title">Your plan, always with you</div>
+          <div class="tech-feature-desc">Open the app, see today's workout. Check off sets and reps as you go. No WhatsApp PDFs, no confusion.</div>
+        </div>
+      </div>
+      <div class="tech-feature">
+        <div class="tech-icon">✓</div>
+        <div>
+          <div class="tech-feature-title">We see everything in real time</div>
+          <div class="tech-feature-desc">Every workout you log, every meal you track — we see it instantly and adjust your plan accordingly.</div>
+        </div>
+      </div>
+      <div class="tech-feature">
+        <div class="tech-icon">✓</div>
+        <div>
+          <div class="tech-feature-title">Automated weekly check-ins</div>
+          <div class="tech-feature-desc">The app sends you a check-in form every week. Fill it in 2 minutes. We review and respond with updates.</div>
+        </div>
+      </div>
+      <div class="tech-feature">
+        <div class="tech-icon">✓</div>
+        <div>
+          <div class="tech-feature-title">Connects to Apple Health & Garmin</div>
+          <div class="tech-feature-desc">Your steps, heart rate, and activity sync automatically. Data-driven coaching, not guesswork.</div>
+        </div>
+      </div>
+    </div>
+    <div class="tech-visual">
+      <div class="phone-mock">
+        <div class="phone-top">
+          <div class="phone-top-text">FITTWINS</div>
+        </div>
+        <div class="phone-content">
+          <div style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:12px;letter-spacing:1px;">TODAY'S WORKOUT</div>
+          <div class="phone-workout">
+            <div class="phone-workout-name">Bench Press</div>
+            <div class="phone-workout-detail">4 sets × 8 reps @ 80kg</div>
+            <div class="phone-check">
+              <div class="check-box">✓</div><div class="check-label">Set 1 done</div>
+            </div>
+            <div class="phone-check">
+              <div class="check-box">✓</div><div class="check-label">Set 2 done</div>
+            </div>
+            <div class="phone-check">
+              <div class="check-box" style="border-color:rgba(255,255,255,0.2);color:transparent;">✓</div><div class="check-label" style="color:rgba(136,136,136,0.4);">Set 3</div>
+            </div>
+          </div>
+          <div class="phone-workout" style="border-left-color:var(--accent2);background:rgba(255,85,51,0.08);">
+            <div class="phone-workout-name">Deadlift</div>
+            <div class="phone-workout-detail">3 sets × 5 reps @ 100kg</div>
+          </div>
+          <div style="margin-top:12px;font-size:9px;font-family:'DM Mono',monospace;color:var(--accent);">NUTRITION: 1840 / 2200 kcal</div>
+        </div>
+      </div>
+      <div style="margin-top:20px;font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:1px;">POWERED BY EVERFIT</div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section">
+  <div class="section-tag reveal">// Client Stories</div>
+  <h2 class="section-title reveal">DON'T TAKE<br><span style="color:var(--accent)">OUR WORD FOR IT.</span></h2>
+  <p class="reveal" style="color:var(--muted);font-size:15px;font-weight:300;margin-top:-32px;margin-bottom:48px;">Real clients. Real words. Unscripted.</p>
+
+  <!-- 3 VIDEOS — portrait layout -->
+  <div class="reveal" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:980px;">
+
+    <!-- HARTAJ -->
+    <div style="background:var(--gray);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform='translateY(0)'">
+      <div style="position:relative;padding-bottom:177.78%;height:0;background:#000;border-radius:8px 8px 0 0;overflow:hidden;">
+        <iframe
+          src="https://www.youtube.com/embed/BpmOr7svIh0?rel=0&modestbranding=1&playsinline=1"
+          style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div style="padding:20px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:40px;height:40px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--black);flex-shrink:0;">H</div>
+          <div>
+            <div style="font-weight:700;font-size:15px;">Hartaj</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;">Based in Australia 🇦🇺</div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:rgba(245,240,232,0.6);line-height:1.7;font-weight:300;margin-bottom:14px;">From Kota to Australia — Hartaj wanted to put on quality weight, build real strength and own his personality. We coached him remotely and he hit a deadlift PR, gained muscle and went into the best shape of his life.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <div style="background:rgba(200,245,66,0.08);border:1px solid rgba(200,245,66,0.2);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;letter-spacing:1px;border-radius:2px;">Body Recomposition</div>
+          <div style="background:rgba(200,245,66,0.08);border:1px solid rgba(200,245,66,0.2);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;letter-spacing:1px;border-radius:2px;">Strength Gains</div>
+          <div style="background:rgba(200,245,66,0.08);border:1px solid rgba(200,245,66,0.2);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;letter-spacing:1px;border-radius:2px;">Online Coaching</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HARSHA -->
+    <div style="background:var(--gray);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform='translateY(0)'">
+      <div style="position:relative;padding-bottom:177.78%;height:0;background:#000;border-radius:8px 8px 0 0;overflow:hidden;">
+        <iframe
+          src="https://www.youtube.com/embed/Q5S_2yr5LJs?rel=0&modestbranding=1&playsinline=1"
+          style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div style="padding:20px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:40px;height:40px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--black);flex-shrink:0;">H</div>
+          <div>
+            <div style="font-weight:700;font-size:15px;">Harsha</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;">Bangalore · 10 Months</div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:rgba(245,240,232,0.6);line-height:1.7;font-weight:300;margin-bottom:14px;">10 months. Early mornings. A medical condition that stopped him gaining weight despite eating well. We dug into his blood reports, built a science-based protocol and increased his strength week by week. Slow and steady — and it worked.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <div style="background:rgba(200,245,66,0.08);border:1px solid rgba(200,245,66,0.2);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;letter-spacing:1px;border-radius:2px;">Medical Case</div>
+          <div style="background:rgba(200,245,66,0.08);border:1px solid rgba(200,245,66,0.2);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;letter-spacing:1px;border-radius:2px;">10 Months</div>
+          <div style="background:rgba(200,245,66,0.08);border:1px solid rgba(200,245,66,0.2);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;letter-spacing:1px;border-radius:2px;">Science-Based</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHUBHAM -->
+    <div style="background:var(--gray);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform='translateY(0)'">
+      <div style="position:relative;padding-bottom:177.78%;height:0;background:#000;border-radius:8px 8px 0 0;overflow:hidden;">
+        <iframe
+          src="https://www.youtube.com/embed/7yxA2MDX9z4?rel=0&modestbranding=1&playsinline=1"
+          style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div style="padding:20px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:40px;height:40px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--black);flex-shrink:0;">S</div>
+          <div>
+            <div style="font-weight:700;font-size:15px;">Shubham</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;">Cricketer · Athlete</div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:rgba(245,240,232,0.6);line-height:1.7;font-weight:300;margin-bottom:14px;">Cricketer. His goal wasn't aesthetics — it was performance. We built a strength & conditioning plan around agility, explosive power and sport-specific movement. Result: sharper on the field, stronger in his game.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <div style="background:rgba(200,245,66,0.08);border:1px solid rgba(200,245,66,0.2);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;letter-spacing:1px;border-radius:2px;">Strength & Conditioning</div>
+          <div style="background:rgba(200,245,66,0.08);border:1px solid rgba(200,245,66,0.2);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;letter-spacing:1px;border-radius:2px;">Cricket Performance</div>
+          <div style="background:rgba(200,245,66,0.08);border:1px solid rgba(200,245,66,0.2);color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;letter-spacing:1px;border-radius:2px;">Athletic Physique</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TRUST BAR -->
+  <div class="reveal" style="margin-top:40px;display:flex;gap:32px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="color:var(--accent);font-size:20px;">✦</div>
+      <div style="font-size:13px;color:rgba(245,240,232,0.5);font-weight:300;">100+ clients transformed</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="color:var(--accent);font-size:20px;">✦</div>
+      <div style="font-size:13px;color:rgba(245,240,232,0.5);font-weight:300;">7+ years of real coaching experience</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="color:var(--accent);font-size:20px;">✦</div>
+      <div style="font-size:13px;color:rgba(245,240,232,0.5);font-weight:300;">Internationally certified coaches</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="consult">
+  <h2 class="cta-big reveal">READY TO<br><span style="color:var(--accent)">START?</span></h2>
+  <p class="cta-sub reveal">Book a consultation call with both twins. ₹999. 30 minutes. No fluff.</p>
+  <div class="cta-actions reveal">
+    <a href="fittwins-form.html" class="btn-primary">Fill Intake Form</a>
+    <a href="https://wa.me/917018921587?text=Hi%20FitTwins!%20%F0%9F%91%8B%20I've%20just%20filled%20your%20intake%20form.%20I'd%20like%20to%20book%20a%20consultation%20call.%20Please%20share%20the%20next%20steps!" class="btn-secondary" target="_blank">WhatsApp Us</a>
+  </div>
+  <div class="reveal" style="text-align:center">
+    <div class="upi-box">
+      <div>
+        <div class="upi-label">Pay via UPI</div>
+        <div class="upi-id">7018921587@ptaxis</div>
+      </div>
+      <div style="width:1px;height:40px;background:rgba(255,255,255,0.1)"></div>
+      <div>
+        <div class="upi-label">WhatsApp</div>
+        <div class="upi-id">+91 70189 21587</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">FITTWINS</div>
+  <div class="footer-links">
+    <a href="#packages">Packages</a>
+    <a href="#consult">Book Call</a>
+    <a href="https://instagram.com" target="_blank">Instagram</a>
+    <a href="https://wa.me" target="_blank">WhatsApp</a>
+  </div>
+  <div class="footer-copy">© 2025 FitTwins · Bangalore, India · Worldwide Online</div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
