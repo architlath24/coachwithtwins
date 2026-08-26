@@ -28,10 +28,37 @@
     overflow-x: hidden;
   }
 
+  /* BIO-AGE HOOK BANNER (NEW) */
+  .bioage-banner {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 110;
+    background: var(--accent);
+    color: var(--black);
+    text-align: center;
+    padding: 10px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .bioage-banner a {
+    color: var(--black);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .bioage-banner .arrow { display: inline-block; transition: transform 0.2s ease; }
+  .bioage-banner a:hover .arrow { transform: translateX(3px); }
+
   /* NAV */
   nav {
     position: fixed;
-    top: 0; left: 0; right: 0;
+    top: 38px; left: 0; right: 0;
     z-index: 100;
     padding: 20px 40px;
     display: flex;
@@ -48,6 +75,22 @@
     letter-spacing: 3px;
     color: var(--accent);
   }
+
+  .nav-links { display: flex; align-items: center; gap: 16px; }
+
+  .nav-bioage {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--accent2);
+    text-decoration: none;
+    border: 1px solid rgba(255,85,51,0.4);
+    padding: 8px 16px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .nav-bioage:hover { background: rgba(255,85,51,0.1); border-color: var(--accent2); }
 
   .nav-cta {
     background: var(--accent);
@@ -69,7 +112,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 120px 40px 80px;
+    padding: 160px 40px 80px;
     position: relative;
     overflow: hidden;
   }
@@ -114,10 +157,47 @@
     color: rgba(245,240,232,0.6);
     max-width: 480px;
     line-height: 1.6;
-    margin-bottom: 48px;
+    margin-bottom: 32px;
     font-weight: 300;
     opacity: 0;
     animation: fadeUp 0.8s ease forwards 0.6s;
+  }
+
+  /* BIO-AGE HERO CARD (NEW) */
+  .bioage-hero-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--gray);
+    border: 1px solid rgba(255,85,51,0.3);
+    border-radius: 4px;
+    padding: 16px 22px;
+    margin-bottom: 32px;
+    max-width: 480px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.7s;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  .bioage-hero-card:hover { border-color: var(--accent2); transform: translateY(-2px); background: #1f1f1f; }
+  .bioage-hero-icon {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--accent2);
+    flex-shrink: 0;
+  }
+  .bioage-hero-text-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 3px;
+  }
+  .bioage-hero-text-sub {
+    font-size: 13px;
+    color: rgba(245,240,232,0.6);
+    font-weight: 300;
   }
 
   .hero-actions {
@@ -724,8 +804,11 @@
 
   /* MOBILE */
   @media (max-width: 768px) {
-    nav { padding: 16px 20px; }
-    .hero { padding: 100px 20px 60px; }
+    .bioage-banner { font-size: 11px; padding: 8px 12px; }
+    nav { top: 34px; padding: 16px 20px; }
+    .nav-links { gap: 10px; }
+    .nav-bioage { padding: 6px 10px; font-size: 10px; }
+    .hero { padding: 140px 20px 60px; }
     .hero-stats { position: static; margin-top: 48px; flex-direction: row; flex-wrap: wrap; gap: 24px; }
     .stat-item { text-align: left; }
     .section { padding: 60px 20px; }
@@ -746,10 +829,19 @@
 </head>
 <body>
 
+<!-- BIO-AGE HOOK BANNER (NEW) -->
+<div class="bioage-banner">
+  🧬 New: Free health check —
+  <a href="/biological-age">Know Your Biological Age <span class="arrow">→</span></a>
+</div>
+
 <!-- NAV -->
 <nav>
   <div class="nav-logo">FITTWINS</div>
-  <a href="#consult" class="nav-cta">Book Consultation</a>
+  <div class="nav-links">
+    <a href="/biological-age" class="nav-bioage">Check Biological Age</a>
+    <a href="#consult" class="nav-cta">Book Consultation</a>
+  </div>
 </nav>
 
 <!-- HERO -->
@@ -762,6 +854,16 @@
     <span class="outline">ONE GOAL.</span>
   </h1>
   <p class="hero-sub">Science-backed fitness coaching by twin specialists — one dedicated to your training, one to your nutrition. Nothing left to chance.</p>
+
+  <!-- BIO-AGE HERO CARD (NEW) -->
+  <a href="/biological-age" class="bioage-hero-card">
+    <div class="bioage-hero-icon">🧬</div>
+    <div>
+      <div class="bioage-hero-text-title">Free Health Check →</div>
+      <div class="bioage-hero-text-sub">Upload your blood report. Get your Biological Age + a personalized diet plan, instantly.</div>
+    </div>
+  </a>
+
   <div class="hero-actions">
     <a href="#consult" class="btn-primary">Book Consultation — ₹999</a>
     <a href="#packages" class="btn-secondary">View Packages</a>
@@ -1196,10 +1298,11 @@
   <div class="footer-links">
     <a href="#packages">Packages</a>
     <a href="#consult">Book Call</a>
+    <a href="/biological-age">Biological Age</a>
     <a href="https://instagram.com" target="_blank">Instagram</a>
     <a href="https://wa.me" target="_blank">WhatsApp</a>
   </div>
-  <div class="footer-copy">© 2025 FitTwins · Bangalore, India · Worldwide Online</div>
+  <div class="footer-copy">© 2026 FitTwins · Bangalore, India · Worldwide Online</div>
 </footer>
 
 <script>
