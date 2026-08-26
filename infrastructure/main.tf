@@ -49,10 +49,35 @@ resource "aws_security_group" "fittwins_sg" {
   name        = "fittwins-sg"
   description = "Allow HTTP, HTTPS and SSH"
   vpc_id      = aws_vpc.fittwins_vpc.id
-  ingress { from_port = 22  to_port = 22  protocol = "tcp" cidr_blocks = ["0.0.0.0/0"] }
-  ingress { from_port = 80  to_port = 80  protocol = "tcp" cidr_blocks = ["0.0.0.0/0"] }
-  ingress { from_port = 443 to_port = 443 protocol = "tcp" cidr_blocks = ["0.0.0.0/0"] }
-  egress  { from_port = 0   to_port = 0   protocol = "-1"  cidr_blocks = ["0.0.0.0/0"] }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags = { Name = "fittwins-sg", Project = "fittwins" }
 }
 
@@ -67,6 +92,7 @@ resource "aws_instance" "fittwins_server" {
   subnet_id              = aws_subnet.fittwins_public_subnet.id
   vpc_security_group_ids = [aws_security_group.fittwins_sg.id]
   key_name               = aws_key_pair.fittwins_key.key_name
+  user_data              = file("deploy.sh")
   tags = { Name = "fittwins-server", Project = "fittwins" }
 }
 
