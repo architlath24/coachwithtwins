@@ -3,7 +3,7 @@ import axios from 'axios'
 import './App.css'
 import { categorize } from './categorize'
 
-const API_BASE = "http://localhost:8000"
+const API_BASE = "https://coachwithtwins.onrender.com"
 const DIET_TABS = [
   { key: "vegetarian", label: "Vegetarian" },
   { key: "non_vegetarian", label: "Non-Vegetarian" },
