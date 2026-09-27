@@ -1,10 +1,28 @@
 #!/bin/bash
+set -euxo pipefail
+
 yum update -y
-yum install docker -y
-systemctl start docker
-systemctl enable docker
-yum install git -y
-git clone https://github.com/architlath24/coachwithtwins.git /home/ec2-user/coachwithtwins
+yum install -y docker git
+
+systemctl enable --now docker
+
+until curl -s --fail http://checkip.amazonaws.com >/dev/null; do
+  sleep 5
+done
+
+rm -rf /home/ec2-user/coachwithtwins
+
+git clone https://github.com/architlath24/coachwithtwins.git \
+  /home/ec2-user/coachwithtwins
+
 cd /home/ec2-user/coachwithtwins
+
 docker build -t fittwins-app .
-docker run -d -p 80:80 --name fittwins-container fittwins-app
+
+docker rm -f fittwins-container 2>/dev/null || true
+
+docker run -d \
+  --name fittwins-container \
+  --restart unless-stopped \
+  -p 80:80 \
+  fittwins-app
