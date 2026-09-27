@@ -29,3 +29,7 @@ infrastructure/*.tfvars
 
 # OS files
 .DS_Store
+infrastructure/terraform.tfvars
+infrastructure/terraform.tfstate
+infrastructure/terraform.tfstate.*
+infrastructure/.terraform/
