@@ -3,12 +3,20 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 import shutil
 import os
+import boto3
 
 from database import SessionLocal
 from models import User, Report, Biomarker
 from schemas import UserCreate
 from gemini_service import extract_biomarkers
 from biomarker_utils import calculate_status, parse_gemini_json, calculate_biological_age
+
+if os.getenv("AWS_ENV") == "true":
+    s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "ap-south-1"))
+    S3_BUCKET = os.environ["S3_BUCKET"]
+else:
+    s3 = None
+    S3_BUCKET = None
 
 app = FastAPI()
 
@@ -63,10 +71,28 @@ def upload_report(user_id: int, file: UploadFile = File(...), db: Session = Depe
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    os.makedirs("uploads", exist_ok=True)
-    file_path = f"uploads/{file.filename}"
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    if os.getenv("AWS_ENV") == "true":
+        s3_key = f"reports/{user_id}/{file.filename}"
+        temp_path = f"/tmp/{file.filename}"
+
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        s3.upload_file(
+            temp_path,
+            S3_BUCKET,
+            s3_key,
+            ExtraArgs={"ContentType": file.content_type or "application/octet-stream"}
+        )
+
+        file_path = temp_path
+        stored_file_path = f"s3://{S3_BUCKET}/{s3_key}"
+    else:
+        os.makedirs("uploads", exist_ok=True)
+        file_path = f"uploads/{file.filename}"
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        stored_file_path = file_path
 
     raw_result = extract_biomarkers(file_path, file.content_type)
     biomarker_list = parse_gemini_json(raw_result)
@@ -81,7 +107,7 @@ def upload_report(user_id: int, file: UploadFile = File(...), db: Session = Depe
 
     new_report = Report(
         user_id=user_id,
-        raw_file_path=file_path,
+        raw_file_path=stored_file_path,
         biological_age_score=age_result["biological_age"],
     )
     db.add(new_report)

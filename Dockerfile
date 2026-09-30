@@ -1,7 +1,18 @@
+FROM node:24-alpine AS build
+
+WORKDIR /app
+
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ .
+RUN npm run build
+
 FROM nginx:alpine
-WORKDIR /usr/share/nginx/html
-RUN rm -f index.html
-COPY index.html .
-COPY fittwins-form.html .
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]

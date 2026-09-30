@@ -92,6 +92,7 @@ resource "aws_instance" "fittwins_server" {
   subnet_id              = aws_subnet.fittwins_public_subnet.id
   vpc_security_group_ids = [aws_security_group.fittwins_sg.id]
   key_name               = aws_key_pair.fittwins_key.key_name
+  iam_instance_profile   = aws_iam_instance_profile.fittwins_ec2_profile.name
   user_data              = file("deploy.sh")
   tags                   = { Name = "fittwins-server", Project = "fittwins" }
 }
@@ -194,3 +195,106 @@ resource "aws_security_group" "fittwins_rds_sg" {
     Project = "fittwins"
   }
 }
+
+resource "aws_iam_role" "fittwins_ec2_s3_role" {
+  name = "fittwins-ec2-s3-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Effect = "Allow"
+
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = {
+    Name    = "fittwins-ec2-s3-role"
+    Project = "fittwins"
+  }
+}
+
+resource "aws_iam_role_policy" "fittwins_s3_access" {
+  name = "fittwins-s3-access"
+  role = aws_iam_role.fittwins_ec2_s3_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Sid    = "ListFitTwinsBucket"
+        Effect = "Allow"
+
+        Action = [
+          "s3:ListBucket"
+        ]
+
+        Resource = aws_s3_bucket.fittwins_bucket.arn
+      },
+      {
+        Sid    = "ManageFitTwinsObjects"
+        Effect = "Allow"
+
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+
+        Resource = "${aws_s3_bucket.fittwins_bucket.arn}/*"
+      },
+      {
+        Sid    = "ReadFitTwinsDBSecret"
+        Effect = "Allow"
+
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+
+        Resource = [
+          aws_secretsmanager_secret.fittwins_db_secret.arn,
+          "arn:aws:secretsmanager:ap-south-1:768296856147:secret:fittwins/gemini-*"
+        ]
+      },
+      {
+        Sid    = "CloudWatchAgent"
+        Effect = "Allow"
+
+        Action = [
+          "cloudwatch:PutMetricData",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams",
+          "logs:DescribeLogGroups",
+        ]
+
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "fittwins_ec2_profile" {
+  name = "fittwins-ec2-profile"
+  role = aws_iam_role.fittwins_ec2_s3_role.name
+}
+
+resource "aws_secretsmanager_secret" "fittwins_db_secret" {
+  name        = "fittwins/rds"
+  description = "Credentials for FitTwins PostgreSQL RDS"
+
+  tags = {
+    Name    = "fittwins-rds-secret"
+    Project = "fittwins"
+  }
+}
+
