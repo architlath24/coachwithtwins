@@ -17,12 +17,29 @@ git clone https://github.com/architlath24/coachwithtwins.git \
 
 cd /home/ec2-user/coachwithtwins
 
-docker build -t fittwins-app .
+docker network inspect fittwins-net >/dev/null 2>&1 || \
+  docker network create fittwins-net
 
-docker rm -f fittwins-container 2>/dev/null || true
+docker build -t fittwins-backend -f backend/Dockerfile .
+
+docker build -t fittwins-frontend .
+
+docker rm -f fittwins-backend fittwins-frontend 2>/dev/null || true
 
 docker run -d \
-  --name fittwins-container \
+  --name fittwins-backend \
+  --network fittwins-net \
+  --restart unless-stopped \
+  -e AWS_ENV=true \
+  -e AWS_REGION=ap-south-1 \
+  -e RDS_SECRET_ID=fittwins/rds \
+  -e GEMINI_SECRET_ID=fittwins/gemini \
+  -e S3_BUCKET=fittwins-768296856147 \
+  fittwins-backend
+
+docker run -d \
+  --name fittwins-frontend \
+  --network fittwins-net \
   --restart unless-stopped \
   -p 80:80 \
-  fittwins-app
+  fittwins-frontend
