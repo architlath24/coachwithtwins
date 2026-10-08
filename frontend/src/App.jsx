@@ -53,27 +53,64 @@ function Spinner({ text }) {
 }
 
 function LoginScreen({ onLogin }) {
+  const [mode, setMode] = useState("login")
+  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const handleLogin = async () => {
+  const handleSubmit = async () => {
     setError(null)
     setLoading(true)
+
     try {
-      const res = await callWithRetry(() =>
-        axios.post(`${API_BASE}/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`)
-      )
-      onLogin(res.data.user_id, res.data.name)
+      if (mode === "signup") {
+        const res = await callWithRetry(() =>
+          axios.post(`${API_BASE}/signup`, {
+            name,
+            email,
+            password,
+          })
+        )
+
+        onLogin(res.data.user_id, res.data.name)
+      } else {
+        const res = await callWithRetry(() =>
+          axios.post(
+            `${API_BASE}/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+          )
+        )
+
+        onLogin(res.data.user_id, res.data.name)
+      }
     } catch (err) {
-      setError("Invalid email or password.")
+      if (mode === "signup") {
+        setError(
+          err?.response?.status === 400
+            ? "An account with this email already exists."
+            : "Unable to create your account. Please try again."
+        )
+      } else {
+        setError("Invalid email or password.")
+      }
     }
+
     setLoading(false)
   }
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && email && password) handleLogin()
+    if (e.key === "Enter" && email && password && (mode === "login" || name)) {
+      handleSubmit()
+    }
+  }
+
+  const switchMode = () => {
+    setMode(mode === "login" ? "signup" : "login")
+    setError(null)
+    setName("")
+    setEmail("")
+    setPassword("")
   }
 
   return (
@@ -81,15 +118,71 @@ function LoginScreen({ onLogin }) {
       <AnimatedBackground />
       <div className="login-box pop-in">
         <div className="eyebrow glow-text">FitTwins &middot; Health Intelligence</div>
-        <h2 className="login-title">Welcome back</h2>
-        <p className="login-sub">Sign in to see your biological age and personalized plan.</p>
-        <input className="login-input" type="email" placeholder="Email" value={email}
-          onChange={e => setEmail(e.target.value)} onKeyDown={handleKeyDown} />
-        <input className="login-input" type="password" placeholder="Password" value={password}
-          onChange={e => setPassword(e.target.value)} onKeyDown={handleKeyDown} />
+
+        <h2 className="login-title">
+          {mode === "login" ? "Welcome back" : "Create your account"}
+        </h2>
+
+        <p className="login-sub">
+          {mode === "login"
+            ? "Sign in to see your biological age and personalized plan."
+            : "Create your account to discover your biological age and personalized plan."}
+        </p>
+
+        {mode === "signup" && (
+          <input
+            className="login-input"
+            type="text"
+            placeholder="Name"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+        )}
+
+        <input
+          className="login-input"
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+
+        <input
+          className="login-input"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+
         {error && <p className="status-text error">{error}</p>}
-        <button className="btn btn-block btn-glow" onClick={handleLogin} disabled={loading || !email || !password}>
-          {loading ? "Signing in..." : "Sign In"}
+
+        <button
+          className="btn btn-block btn-glow"
+          onClick={handleSubmit}
+          disabled={
+            loading ||
+            !email ||
+            !password ||
+            (mode === "signup" && !name)
+          }
+        >
+          {loading
+            ? mode === "signup" ? "Creating account..." : "Signing in..."
+            : mode === "signup" ? "Create Account" : "Sign In"}
+        </button>
+
+        <button
+          type="button"
+          className="login-switch"
+          onClick={switchMode}
+        >
+          {mode === "login"
+            ? "Don't have an account? Create one"
+            : "Already have an account? Sign In"}
         </button>
       </div>
     </>
