@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        EC2_DIR = "/home/ec2-user/coachwithtwins"
-    }
-
     stages {
 
         stage('Checkout') {
@@ -16,7 +12,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                    cd ${EC2_DIR}
                     docker build -t fittwins-frontend .
                 '''
             }
