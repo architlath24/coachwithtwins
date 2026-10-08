@@ -1,89 +1,547 @@
-# FitTwins — Cloud Infrastructure & AI Health Platform
+# FitTwins — Cloud-Native Fitness & Biological Age Platform
 
-A real fitness coaching business's tech stack, built end-to-end in two phases: cloud infrastructure (Terraform, Docker, Kubernetes) and a full-stack AI health feature (FastAPI, PostgreSQL, React, Google Gemini).
+FitTwins is a real fitness coaching platform combined with an AI-powered Biological Age assessment application.
 
----
-
-## Phase 1 — Cloud Infrastructure
-
-Provisioned and deployed the FitTwins marketing site on AWS using infrastructure-as-code and container orchestration.
-
-**What's in this phase:**
-- **Terraform** (`infrastructure/`) — provisions a VPC, public subnet, Internet Gateway, route tables, security groups, an EC2 instance, and an Elastic IP. Fully reproducible: `terraform apply` builds everything, `terraform destroy` tears it down cleanly.
-- **Docker** (`Dockerfile`) — containerizes the static site (nginx + HTML/CSS/JS).
-- **Kubernetes** (`k8s/`) — a Deployment (2 replicas) and a Service, demonstrating self-healing (a killed Pod is automatically replaced) and zero-downtime rolling updates when the image version changes.
-- **Automated deployment** — a `user_data` cloud-init script means a single `terraform apply` provisions the server *and* deploys the app, with zero manual SSH steps.
-
-**Why these choices:**
-- Terraform over manual console clicks — reproducible, version-controlled infrastructure.
-- Docker over a bare install — the app runs identically anywhere, no "works on my machine" issues.
-- Kubernetes over a single server — self-healing and rolling updates without downtime, the same pattern real production systems use, demonstrated at small scale.
+The project was built end-to-end using AWS, Terraform, Docker, Jenkins CI/CD, FastAPI, React, PostgreSQL, Amazon RDS, S3, Secrets Manager, Application Load Balancing, CloudWatch, and HTTPS.
 
 ---
 
-## Phase 2 — Know Your Biological Age
+## Architecture
 
-A lead-generation health tool: users upload a blood report, get a computed **Biological Age**, a visual breakdown of their biomarkers, and a personalized, food-first diet plan — before ever booking a coaching call.
+Internet
+  |
+  v
+Cloudflare DNS
+  |
+  v
+AWS Application Load Balancer
+  |
+  +-- HTTP :80  -> HTTPS redirect
+  |
+  +-- HTTPS :443
+          |
+          v
+      EC2 Instance
+      Docker Host
+          |
+          v
+        Nginx
+          |
+          +----------------------+
+          |                      |
+          v                      v
+   Main FitTwins Site     Biological Age React App
+                                  |
+                                  v
+                             FastAPI Backend
+                                  |
+                     +------------+------------+
+                     |            |            |
+                     v            v            v
+                   RDS           S3       Secrets Manager
+                PostgreSQL
+                                  |
+                                  v
+                           Google Gemini API
 
-### Why this exists (not just "because AI is cool")
-This tool sits at the top of the FitTwins funnel — a free, personalized hook that draws visitors in with real value before they see the coaching offer. It's intentionally a **separate application** from the main marketing site (`index.html`), linked by a CTA button, because:
-- The marketing site is static and needs to load instantly and never break — coupling it to a database and a 10–20 second AI call would put that at risk.
-- This is the same pattern most real products use: a fast marketing site and a full application, deployed independently, linked by a button (e.g. `stripe.com` vs `dashboard.stripe.com`).
+---
 
-### How it works
-1. User signs up / logs in (password hashed with bcrypt, never stored in plain text).
-2. User uploads a blood report (PDF or image).
-3. The file is sent to **Google Gemini** (`gemini-3.6-flash`), which extracts every biomarker as structured JSON — name, value, unit, and normal range.
-4. Each biomarker is classified **red** (out of range) or **green** (normal).
-5. **Biological Age** is computed using the real, peer-reviewed **PhenoAge formula** (Levine et al., 2018) when the report contains all 9 required markers (albumin, creatinine, glucose, CRP, lymphocyte %, MCV, RDW, alkaline phosphatase, WBC). If any are missing, the system falls back to a simplified estimate and **explicitly tells the user which marker to add next time** — no false precision.
-6. A second, separate Gemini call generates a personalized diet plan — organized by deficiency, with three variants (vegetarian / non-vegetarian / vegan), prioritizing whole foods and recommending supplements only where diet genuinely can't close the gap.
-7. Results are stored in PostgreSQL (`users`, `reports`, `biomarkers` tables) so history can be tracked over time.
+## Live Application
 
-### Tech stack
-| Layer | Tool |
+### Main Coaching Website
+
+https://fitwithtwins.com/
+
+### Biological Age Application
+
+https://fitwithtwins.com/biological-age/
+
+### Backend API
+
+https://fitwithtwins.com/api/
+
+---
+
+## Key Features
+
+### Fitness Coaching Website
+
+- FitTwins coaching landing page
+- Fitness-focused content and CTAs
+- Intake form
+- Biological Age application integration
+- Nginx-based static content delivery
+
+### Biological Age Application
+
+Users can:
+
+1. Create an account
+2. Log in securely
+3. Upload a blood report
+4. Extract biomarkers using Google Gemini
+5. View biomarker results
+6. Identify out-of-range values
+7. Calculate Biological Age
+8. View categorized biomarkers
+9. Generate personalized food-first diet recommendations
+10. Track previous reports
+
+### Backend
+
+The FastAPI backend provides:
+
+- User registration
+- Authentication
+- Password hashing
+- Blood report processing
+- Biomarker extraction
+- Biological Age calculation
+- Diet-plan generation
+- PostgreSQL persistence
+- S3 integration
+
+---
+
+## Technology Stack
+
+| Layer | Technology |
 |---|---|
-| Frontend | React (Vite) |
+| Frontend | React, Vite |
 | Backend | Python, FastAPI |
-| Database | PostgreSQL (SQLAlchemy ORM) |
-| AI | Google Gemini API |
-| Auth | bcrypt password hashing |
-| Infra (planned) | AWS S3 (file storage), RDS (managed Postgres), same Kubernetes setup as Phase 1 |
-
-### Design notes worth knowing
-- Extraction and diet-plan generation are two separate, focused Gemini calls rather than one large prompt — smaller prompts are more reliable.
-- The frontend includes retry logic for transient Gemini `503` (server overload) errors.
-- Biomarkers are grouped into categories (Iron Studies, Lipid Profile, Liver Function, CBC, Thyroid, etc.) with a summary "ring" overview, rather than one long flat list.
+| Database | PostgreSQL |
+| ORM | SQLAlchemy |
+| AI | Google Gemini |
+| Authentication | bcrypt |
+| Web Server | Nginx |
+| Containers | Docker |
+| CI/CD | Jenkins |
+| Cloud | AWS |
+| Infrastructure as Code | Terraform |
+| Load Balancing | AWS Application Load Balancer |
+| HTTPS | AWS ACM |
+| Object Storage | Amazon S3 |
+| Database Hosting | Amazon RDS |
+| Secrets | AWS Secrets Manager |
+| Monitoring | Amazon CloudWatch |
+| DNS | Cloudflare |
+| Kubernetes | Kubernetes manifests |
 
 ---
 
-## Repository structure
+## AWS Infrastructure
 
-```
+Terraform manages the AWS infrastructure in `infrastructure/`.
+
+### Networking
+
+- VPC
+- Public subnet
+- Private subnets
+- Internet Gateway
+- Route table
+- Security groups
+
+### Compute
+
+- Amazon EC2
+- Elastic IP
+- Docker runtime
+- Jenkins CI/CD server
+
+### Database
+
+- Amazon RDS PostgreSQL
+- Private database subnets
+- Dedicated RDS security group
+
+### Load Balancing
+
+- Application Load Balancer
+- HTTP listener
+- HTTPS listener
+- HTTP to HTTPS redirect
+- Target group
+- EC2 target attachment
+
+### Security and Storage
+
+- AWS ACM certificate
+- AWS Secrets Manager
+- Amazon S3
+- IAM role and instance profile
+- Restricted Jenkins access
+
+### Monitoring
+
+- CloudWatch Agent
+- EC2 CPU, memory and disk metrics
+- CloudWatch dashboard
+- High CPU alarm
+
+---
+
+## CI/CD Pipeline
+
+Jenkins runs on the EC2 infrastructure and deploys the application from GitHub.
+
+Developer
+  |
+  v
+GitHub
+  |
+  v
+Jenkins
+  |
+  +-- Checkout
+  +-- Docker Build
+  +-- Deploy Container
+  +-- Application Verification
+  |
+  v
+Production EC2
+
+The pipeline:
+
+1. Checks out the latest Git commit
+2. Builds the Docker image
+3. Removes the previous frontend container
+4. Starts the new container
+5. Connects it to the Docker network
+6. Runs HTTP smoke tests
+7. Reports build success or failure
+
+---
+
+## Docker Architecture
+
+The main Docker image uses a multi-stage build.
+
+Node.js Build Stage
+  |
+  +-- npm ci
+  +-- React/Vite build
+  |
+  v
+Nginx Alpine Runtime
+  |
+  +-- Main FitTwins website
+  +-- Biological Age React application
+  +-- FastAPI reverse proxy
+
+Nginx routes:
+
+- `/` -> Main FitTwins website
+- `/biological-age/` -> React Biological Age application
+- `/api/` -> FastAPI backend
+
+---
+
+## Biological Age Flow
+
+User
+  |
+  v
+React Application
+  |
+  | Upload blood report
+  v
+FastAPI Backend
+  |
+  v
+Google Gemini
+  |
+  | Structured biomarker extraction
+  v
+Biomarker Processing
+  |
+  +-- Categorization
+  +-- Normal/out-of-range classification
+  +-- Biological Age calculation
+  |
+  v
+PostgreSQL
+  |
+  v
+React Dashboard
+
+Biomarkers are grouped into categories including:
+
+- Iron Studies
+- Lipid Profile
+- Liver Function
+- Kidney Function
+- Blood Count
+- Thyroid
+- Vitamins & Minerals
+- Glucose & Metabolic
+- Other
+
+---
+
+## Database
+
+PostgreSQL is hosted on Amazon RDS.
+
+Application tables include:
+
+- `users`
+- `reports`
+- `biomarkers`
+
+The backend uses SQLAlchemy for database access.
+
+RDS is deployed in private subnets and is not directly exposed to the public internet.
+
+---
+
+## Security
+
+Security controls implemented include:
+
+- HTTPS through AWS ACM
+- HTTP to HTTPS redirection
+- Private RDS deployment
+- Dedicated RDS security group
+- EC2 IAM role
+- AWS Secrets Manager
+- bcrypt password hashing
+- Restricted Jenkins access
+- Security-group based service communication
+- Secrets excluded from Git
+
+---
+
+## Infrastructure as Code
+
+Terraform manages:
+
+- VPC
+- Public subnet
+- Private subnets
+- Internet Gateway
+- Route table
+- Security groups
+- EC2
+- Elastic IP
+- RDS PostgreSQL
+- RDS subnet group
+- Application Load Balancer
+- Target group
+- HTTP listener
+- HTTPS listener
+- ACM certificate
+- IAM role
+- IAM instance profile
+- S3
+- Secrets Manager
+
+Typical workflow:
+
+    cd infrastructure
+    terraform init
+    terraform validate
+    terraform plan
+    terraform apply
+
+The current Terraform configuration has been verified against AWS and returns:
+
+    No changes. Your infrastructure matches the configuration.
+
+---
+
+## Kubernetes
+
+The repository also contains Kubernetes manifests under `k8s/`.
+
+They demonstrate:
+
+- Kubernetes Deployment
+- Multiple replicas
+- Resource requests and limits
+- Service exposure
+- Container orchestration
+
+The current production deployment uses Docker on EC2 with Jenkins. The Kubernetes manifests are retained as part of the project's container-orchestration implementation and learning path.
+
+---
+
+## Repository Structure
+
 coachwithtwins/
-├── index.html              # Marketing site (Phase 1), now with biological-age CTA
-├── fittwins-form.html       # Intake form
-├── Dockerfile                # Containerizes the marketing site
-├── Jenkinsfile               # CI pipeline (in progress)
-├── infrastructure/           # Terraform: VPC, EC2, security groups, etc.
-├── k8s/                      # Kubernetes Deployment + Service manifests
-└── frontend/
-    └── src/
-        ├── App.jsx            # Biological Age dashboard (React)
-        ├── App.css            # Styling, matched to FitTwins brand
-        └── categorize.js      # Groups biomarkers into panels
-```
-
-*(Backend code — FastAPI app, database models, Gemini integration — lives locally during development and will be added to this repo under `backend/` as part of the AWS deployment phase.)*
+|
++-- backend/
+|   +-- main.py
+|   +-- database.py
+|   +-- models.py
+|   +-- schemas.py
+|   +-- gemini_service.py
+|   +-- biomarker_utils.py
+|   +-- supplement_guide.py
+|   +-- aws_config.py
+|   +-- create_tables.py
+|   +-- requirements.txt
+|   +-- Dockerfile
+|
++-- frontend/
+|   +-- src/
+|   |   +-- App.jsx
+|   |   +-- App.css
+|   |   +-- index.css
+|   |   +-- main.jsx
+|   |   +-- categorize.js
+|   +-- package.json
+|   +-- vite.config.js
+|
++-- infrastructure/
+|   +-- main.tf
+|   +-- variables.tf
+|   +-- outputs.tf
+|   +-- deploy.sh
+|
++-- k8s/
+|   +-- deployment.yaml
+|   +-- service.yaml
+|
++-- Dockerfile
++-- Jenkinsfile
++-- nginx.conf
++-- index.html
++-- fittwins-form.html
++-- .gitignore
++-- README.md
 
 ---
 
-## Status
-- ✅ Phase 1 complete — infrastructure provisioned, tested, and torn down repeatedly with zero cost overruns.
-- ✅ Phase 2 backend complete and tested locally (auth, extraction, biological age, diet plans).
-- ✅ Phase 2 frontend built and connected end-to-end.
-- 🔜 In progress: migrating local Postgres → AWS RDS, local file storage → S3, CI/CD pipeline, containerizing and deploying the dashboard via the existing Kubernetes setup.
+## Local Development
+
+### Frontend
+
+    cd frontend
+    npm install
+    npm run dev
+
+### Backend
+
+    cd backend
+    pip install -r requirements.txt
+    uvicorn main:app --reload
+
+### Docker
+
+    docker build -t fittwins-frontend .
+
+    docker run -d \
+      --name fittwins-frontend \
+      -p 80:80 \
+      fittwins-frontend
 
 ---
 
-## Live Demo
-Marketing site: http://13.127.25.4 *(infrastructure is destroyed between sessions to avoid unnecessary AWS costs — redeploy with `cd infrastructure && terraform apply`)*
+## Deployment Flow
+
+git push
+  |
+  v
+GitHub
+  |
+  v
+Jenkins
+  |
+  v
+Docker Build
+  |
+  v
+Docker Container
+  |
+  v
+EC2
+  |
+  v
+Application Load Balancer
+  |
+  v
+https://fitwithtwins.com
+
+---
+
+## DevOps Concepts Demonstrated
+
+### Infrastructure
+
+- Infrastructure as Code
+- AWS networking
+- Public/private subnet design
+- Security groups
+- IAM
+- Load balancing
+- TLS certificates
+- Managed databases
+
+### Containers
+
+- Docker image creation
+- Multi-stage builds
+- Container networking
+- Nginx reverse proxy
+- Container lifecycle management
+
+### CI/CD
+
+- Git-based workflow
+- Jenkins pipelines
+- Automated Docker builds
+- Automated deployment
+- Deployment verification
+- Failure handling
+
+### Cloud
+
+- EC2
+- RDS
+- S3
+- ACM
+- Secrets Manager
+- CloudWatch
+- IAM
+- ALB
+
+### Application Engineering
+
+- React
+- FastAPI
+- PostgreSQL
+- REST APIs
+- Authentication
+- AI integration
+- Structured data extraction
+
+---
+
+## Project Status
+
+| Component | Status |
+|---|---|
+| FitTwins coaching website | Live |
+| Biological Age application | Live |
+| FastAPI backend | Deployed |
+| PostgreSQL RDS | Deployed |
+| S3 integration | Configured |
+| AWS Secrets Manager | Configured |
+| Application Load Balancer | Live |
+| HTTPS / ACM | Live |
+| Docker | Production |
+| Jenkins CI/CD | Working |
+| Terraform | Infrastructure managed |
+| CloudWatch | Configured |
+| Kubernetes manifests | Included |
+
+---
+
+## Author
+
+**Archit Lath**
+
+Cloud / DevOps Engineer
+
+AWS · Terraform · Docker · Jenkins · Kubernetes · Python · FastAPI · React · PostgreSQL · Nginx · CloudWatch
