@@ -1,65 +1,99 @@
 pipeline {
     agent any
-    
+
     environment {
         DOCKER_IMAGE = "architlath24/fittwins"
         DOCKER_TAG = "${BUILD_NUMBER}"
+        EC2_HOST = "3.7.38.209"
+        EC2_USER = "ec2-user"
+        EC2_DIR = "/home/ec2-user/coachwithtwins"
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
-                echo 'Checking out code from GitHub...'
                 checkout scm
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+                sh '''
+                    docker build \
+                      -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
+                      -t ${DOCKER_IMAGE}:latest \
+                      .
+                '''
             }
         }
-        
+
         stage('Push to DockerHub') {
             steps {
-                echo 'Pushing image to DockerHub...'
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-credentials',
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                    sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                    sh "docker push ${DOCKER_IMAGE}:latest"
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login \
+                          -u "$DOCKER_USER" \
+                          --password-stdin
+
+                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker push ${DOCKER_IMAGE}:latest
+
+                        docker logout
+                    '''
                 }
             }
         }
-        
-        stage('Deploy to Kubernetes') {
+
+        stage('Deploy to EC2') {
             steps {
-                echo 'Deploying to Kubernetes...'
-                sh "kubectl set image deployment/fittwins fittwins=${DOCKER_IMAGE}:${DOCKER_TAG}"
-                sh "kubectl rollout status deployment/fittwins"
+                sshagent(credentials: ['fittwins-ec2-ssh']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no \
+                            ${EC2_USER}@${EC2_HOST} '
+                                set -e
+                                cd ${EC2_DIR}
+                                git pull origin main
+                                docker build -t fittwins-frontend .
+                                docker rm -f fittwins-frontend || true
+                                docker run -d \
+                                  --name fittwins-frontend \
+                                  --network fittwins-net \
+                                  --restart unless-stopped \
+                                  -p 80:80 \
+                                  fittwins-frontend
+                            '
+                    '''
+                }
             }
         }
-        
+
         stage('Verify Deployment') {
             steps {
-                echo 'Verifying deployment...'
-                sh "kubectl get pods -l app=fittwins"
-                sh "kubectl get service fittwins-service"
+                sshagent(credentials: ['fittwins-ec2-ssh']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no \
+                            ${EC2_USER}@${EC2_HOST} '
+                                set -e
+                                docker ps --filter name=fittwins-frontend
+                                curl -f http://localhost/
+                                curl -f http://localhost/biological-age/
+                            '
+                    '''
+                }
             }
         }
     }
-    
+
     post {
         success {
-            echo 'Deployment successful!'
+            echo 'FitTwins deployment successful!'
         }
         failure {
-            echo 'Deployment failed! Check logs above.'
+            echo 'FitTwins deployment failed. Check Jenkins logs.'
         }
     }
 }
