@@ -1,4 +1,5 @@
 import json
+import re
 import math
 
 def calculate_status(value, min_range, max_range):
@@ -11,12 +12,44 @@ def calculate_status(value, min_range, max_range):
     return "green"
 
 def parse_gemini_json(raw_text):
+    """Parse JSON returned by Gemini, including fenced or wrapped JSON."""
+    if not raw_text:
+        raise ValueError("Gemini returned an empty response")
+
     cleaned = raw_text.strip()
-    if cleaned.startswith("```"):
-        cleaned = cleaned.split("```")[1]
-        if cleaned.startswith("json"):
-            cleaned = cleaned[4:]
-    return json.loads(cleaned)
+
+    # Remove markdown code fences.
+    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*```$", "", cleaned)
+
+    # First attempt: response is already valid JSON.
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # Second attempt: find the JSON array/object inside surrounding text.
+    array_start = cleaned.find("[")
+    array_end = cleaned.rfind("]")
+
+    if array_start != -1 and array_end > array_start:
+        candidate = cleaned[array_start:array_end + 1]
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            pass
+
+    object_start = cleaned.find("{")
+    object_end = cleaned.rfind("}")
+
+    if object_start != -1 and object_end > object_start:
+        candidate = cleaned[object_start:object_end + 1]
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            pass
+
+    raise ValueError("Gemini returned invalid JSON")
 
 
 REQUIRED_MARKERS = {
