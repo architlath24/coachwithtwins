@@ -1,0 +1,62 @@
+diff --git a/README.md b/README.md
+index caa9e79..0a1750e 100644
+--- a/README.md
++++ b/README.md
+@@ -210,17 +210,24 @@ Real problems diagnosed and fixed (the engineering story behind this project):
+ 
+ ## Security & hardening roadmap
+ 
+-Implemented: HTTPS/ACM with HTTP→HTTPS redirect, bcrypt password hashing, RDS in private subnets (not publicly accessible), secrets in Secrets Manager (not in source), least-privilege IAM for the instance role, secrets git-ignored.
++Implemented:
++
++- HTTPS/ACM with HTTP→HTTPS redirect.
++- **JWT-based authentication** (HS256): login takes a request body and returns a token; the signing key is injected from the host, not in source.
++- **Per-user authorization** on report routes — a user can only access their own reports; cross-user access returns 403 (closes an IDOR).
++- bcrypt password hashing.
++- RDS in private subnets (not publicly accessible); deletion protection enabled.
++- S3 public-access block, versioning, and default encryption.
++- Secrets in Secrets Manager (not in source); least-privilege IAM for the instance role; secrets git-ignored.
+ 
+ In progress / planned (tracked, prioritized):
+ 
+-1. Token-based authentication and per-user authorization on report routes.
+-2. Move login credentials out of the query string into a request body.
+-3. Tighten security groups (restrict SSH; front all public traffic through the ALB).
+-4. Enable RDS encryption at rest and automated backups; add deletion protection.
+-5. S3 public-access block, versioning, and a lifecycle policy for reports.
+-6. Upload hardening: filename sanitisation, content-type/size validation, temp-file cleanup.
+-7. Consent and medical-disclaimer handling for health data.
++1. Move the JWT signing key into Secrets Manager / SSM (currently a host env-file).
++2. Tighten security groups (restrict SSH, or move to SSM Session Manager; front all public traffic through the ALB).
++3. Enable RDS encryption at rest and automated backups.
++4. S3 lifecycle policy for reports.
++5. Upload hardening: filename sanitisation, content-type/size validation, temp-file cleanup.
++6. Consent and medical-disclaimer handling for health data.
+ 
+ > This is a learning/portfolio project. It is **not** a certified medical device and makes no regulatory-compliance claims. Biological-age output is informational only.
+ 
+diff --git a/nginx.conf b/nginx.conf
+index b571d86..d9a9aab 100644
+--- a/nginx.conf
++++ b/nginx.conf
+@@ -16,13 +16,20 @@ server {
+         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+     }
+ 
++    # Hashed build assets are immutable — cache them aggressively
++    location /biological-age/assets/ {
++        add_header Cache-Control "public, max-age=31536000, immutable";
++    }
++
+     # Biological Age React application
+     location /biological-age/ {
++        add_header Cache-Control "no-cache";
+         try_files $uri $uri/ /biological-age/index.html;
+     }
+ 
+     # Main FitTwins coaching website
+     location / {
++        add_header Cache-Control "no-cache";
+         try_files $uri $uri/ /index.html;
+     }
+ }
