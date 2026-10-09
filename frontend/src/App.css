@@ -196,3 +196,22 @@ body { background: var(--black); color: var(--white); font-family: 'DM Sans', sa
 .login-switch:hover {
   opacity: 0.8;
 }
+
+/* ---------- Facts loader ---------- */
+.facts-loader { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 64px 0; }
+.facts-status { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.facts-card { max-width: 440px; width: 100%; background: var(--gray); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 2px; padding: 20px 24px; text-align: center; min-height: 96px; display: flex; flex-direction: column; justify-content: center; gap: 8px; transition: opacity 0.4s ease, transform 0.4s ease; }
+.facts-card.show { opacity: 1; transform: translateY(0); }
+.facts-card.hide { opacity: 0; transform: translateY(8px); }
+.facts-eyebrow { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+.facts-text { font-size: 15px; line-height: 1.6; font-weight: 300; color: rgba(245,240,232,0.9); }
+
+/* ---------- Biomarker modal extras ---------- */
+.modal { max-height: 85vh; overflow-y: auto; }
+.modal .modal-value { display: flex; align-items: center; gap: 10px; text-transform: none; }
+.modal-flag { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; font-weight: 700; }
+.modal-flag.low { background: rgba(255,179,71,0.16); color: #ffb347; }
+.modal-flag.high { background: rgba(232,122,106,0.16); color: var(--accent2); }
+.modal-flag.out { background: rgba(232,122,106,0.16); color: var(--accent2); }
+.modal-supp { border-top: 1px solid var(--border); padding-top: 14px; }
+.modal-note { font-size: 11px; line-height: 1.5; color: var(--muted); font-style: italic; margin: 10px 0 16px; }

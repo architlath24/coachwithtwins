@@ -1,0 +1,248 @@
+diff --git a/frontend/src/App.css b/frontend/src/App.css
+index a928c06..ab30e26 100644
+--- a/frontend/src/App.css
++++ b/frontend/src/App.css
+@@ -196,3 +196,22 @@ body { background: var(--black); color: var(--white); font-family: 'DM Sans', sa
+ .login-switch:hover {
+   opacity: 0.8;
+ }
++
++/* ---------- Facts loader ---------- */
++.facts-loader { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 64px 0; }
++.facts-status { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
++.facts-card { max-width: 440px; width: 100%; background: var(--gray); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 2px; padding: 20px 24px; text-align: center; min-height: 96px; display: flex; flex-direction: column; justify-content: center; gap: 8px; transition: opacity 0.4s ease, transform 0.4s ease; }
++.facts-card.show { opacity: 1; transform: translateY(0); }
++.facts-card.hide { opacity: 0; transform: translateY(8px); }
++.facts-eyebrow { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
++.facts-text { font-size: 15px; line-height: 1.6; font-weight: 300; color: rgba(245,240,232,0.9); }
++
++/* ---------- Biomarker modal extras ---------- */
++.modal { max-height: 85vh; overflow-y: auto; }
++.modal .modal-value { display: flex; align-items: center; gap: 10px; text-transform: none; }
++.modal-flag { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; font-weight: 700; }
++.modal-flag.low { background: rgba(255,179,71,0.16); color: #ffb347; }
++.modal-flag.high { background: rgba(232,122,106,0.16); color: var(--accent2); }
++.modal-flag.out { background: rgba(232,122,106,0.16); color: var(--accent2); }
++.modal-supp { border-top: 1px solid var(--border); padding-top: 14px; }
++.modal-note { font-size: 11px; line-height: 1.5; color: var(--muted); font-style: italic; margin: 10px 0 16px; }
+diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
+index 9b93631..234c28e 100644
+--- a/frontend/src/App.jsx
++++ b/frontend/src/App.jsx
+@@ -52,6 +52,52 @@ function Spinner({ text }) {
+   )
+ }
+ 
++const BLOOD_FACTS = [
++  "Nearly 1 in 2 Indians run low on vitamin D — even with all our sunshine. ☀️",
++  "B12 comes mostly from animal foods, so vegetarians are far more likely to run low. 🥛",
++  "More than half of Indian women are estimated to be anaemic — most often from low iron. 🩸",
++  "Iron's main job is carrying oxygen to every cell — run low and you feel tired and foggy.",
++  "Your red blood cells live only about 120 days — your blood is always renewing itself.",
++  "One blood draw can hint at your heart, liver, kidney and thyroid health all at once.",
++  "B12 can take years to show up as low — your liver quietly keeps a long backup store.",
++  "Your thyroid is a small butterfly-shaped gland that sets your whole body's pace. 🦋",
++  "Low vitamin D is linked to fatigue, low mood and weaker bones over time.",
++  "Fasting before a cholesterol test matters — a recent meal can skew the numbers. 🍽️",
++  "Being dehydrated concentrates your blood and can nudge several readings higher. 💧",
++  "Magnesium quietly powers over 300 reactions in your body — and many of us fall short.",
++  "Vitamin D acts more like a hormone — your skin makes it from sunlight.",
++  "HDL is the 'good' cholesterol — it helps clear the other kind out of your arteries.",
++]
++
++function FactsLoader({ text }) {
++  const [idx, setIdx] = useState(() => Math.floor(Math.random() * BLOOD_FACTS.length))
++  const [show, setShow] = useState(true)
++  useEffect(() => {
++    const t = setInterval(() => {
++      setShow(false)
++      setTimeout(() => {
++        setIdx(i => (i + 1) % BLOOD_FACTS.length)
++        setShow(true)
++      }, 450)
++    }, 4200)
++    return () => clearInterval(t)
++  }, [])
++  return (
++    <div className="facts-loader fade-in">
++      <div className="spinner-orbit">
++        <div className="spinner-core"></div>
++        <div className="spinner-ring"></div>
++        <div className="spinner-ring ring2"></div>
++      </div>
++      <div className="facts-status">{text}</div>
++      <div className={`facts-card ${show ? "show" : "hide"}`}>
++        <div className="facts-eyebrow">Did you know?</div>
++        <div className="facts-text">{BLOOD_FACTS[idx]}</div>
++      </div>
++    </div>
++  )
++}
++
+ function LoginScreen({ onLogin }) {
+   const [mode, setMode] = useState("login")
+   const [name, setName] = useState("")
+@@ -236,46 +282,100 @@ function Gauge({ value, min, max, status, size = 46, glow = false, animateDelay
+   )
+ }
+ 
++// Plain-language explainers for the common markers. Keyed by a lowercase
++// substring of the marker name; first match wins, so more specific keys
++// (ldl/hdl) come before broader ones (cholesterol).
++const BIOMARKER_INFO = {
++  "vitamin d": { what: "A sunshine nutrient that acts like a hormone, helping your body absorb calcium and keep bones, muscles and immunity strong.", matters: "Running low is very common in India and is linked to tiredness, low mood, aches and weaker bones over time.", improve: "Get 15–20 min of midday sun on bare skin a few times a week, and ask your doctor whether a vitamin D supplement is right for you." },
++  "b12": { what: "A vitamin your nerves and blood cells depend on. It comes almost entirely from animal foods.", matters: "Low B12 can cause fatigue, tingling in hands and feet, poor memory and a type of anaemia. Vegetarians are most at risk.", improve: "Include dairy, eggs or fortified foods; strict vegetarians often need a B12 supplement. Your liver stores it, so levels change slowly." },
++  "folate": { what: "Vitamin B9 — works hand in hand with B12 to build healthy red blood cells.", matters: "Low folate causes a type of anaemia and tiredness, and matters a lot in pregnancy.", improve: "Eat more leafy greens, beans, lentils and citrus; a supplement may be advised, especially when planning pregnancy." },
++  "ferritin": { what: "Your body's stored-iron level — like the fuel left in your iron tank.", matters: "Low ferritin is the earliest sign of iron deficiency and shows up as fatigue, hair fall and breathlessness. Very high can signal inflammation.", improve: "If low: iron-rich foods (greens, dates, jaggery, meat) plus vitamin C to absorb it better. Retest before supplementing long-term." },
++  "hemoglobin": { what: "The protein in red blood cells that carries oxygen from your lungs to the rest of your body.", matters: "Low hemoglobin means anaemia — tiredness, pale skin, breathlessness and poor focus. It's extremely common in Indian women.", improve: "Iron- and B12-rich foods with vitamin C help; your doctor will look at the cause before treating." },
++  "haemoglobin": { what: "The protein in red blood cells that carries oxygen from your lungs to the rest of your body.", matters: "Low haemoglobin means anaemia — tiredness, pale skin, breathlessness and poor focus. It's extremely common in Indian women.", improve: "Iron- and B12-rich foods with vitamin C help; your doctor will look at the cause before treating." },
++  "iron": { what: "The mineral your body uses to carry oxygen in the blood.", matters: "Low iron leaves you tired, foggy and short of breath; it's the world's most common deficiency.", improve: "Pair iron-rich foods with vitamin C (lemon, amla); avoid tea/coffee right after meals as they block absorption." },
++  "hba1c": { what: "Your average blood sugar over the last ~3 months — a report card for sugar control.", matters: "A higher value points toward pre-diabetes or diabetes, which quietly affects the heart, kidneys, eyes and nerves.", improve: "Cut refined carbs and sugary drinks, move daily, manage weight and sleep. Changes show up at the next 3-month test." },
++  "glucose": { what: "The sugar your body uses for energy, measured in your blood.", matters: "Consistently high glucose can mean diabetes risk; very low can cause shakiness and dizziness.", improve: "Balance meals with protein and fibre, stay active, and fast properly before the test so the reading is accurate." },
++  "tsh": { what: "The brain's signal to your thyroid gland, which sets your whole body's speed.", matters: "High TSH often means an underactive thyroid (fatigue, weight gain, cold); low can mean an overactive one (anxiety, weight loss).", improve: "Thyroid issues need a doctor's guidance — don't self-treat. Adequate iodine and selenium support normal function." },
++  "ldl": { what: "The 'bad' cholesterol that can build up in artery walls.", matters: "High LDL raises the long-term risk of heart attack and stroke, usually with no symptoms until late.", improve: "More fibre, nuts and healthy oils; less fried and processed food; regular exercise. Some people also need medication." },
++  "hdl": { what: "The 'good' cholesterol that clears the bad kind out of your arteries.", matters: "Low HDL is less protective for your heart; higher is generally better.", improve: "Regular exercise, healthy fats (nuts, fish, olive oil) and quitting smoking help raise it." },
++  "triglyceride": { what: "A type of fat in your blood, strongly tied to diet and alcohol.", matters: "High triglycerides raise heart risk and can strain the pancreas at very high levels.", improve: "Cut sugar, refined carbs and alcohol; add omega-3 foods and exercise. Fast before testing for an accurate number." },
++  "cholesterol": { what: "A waxy fat your body needs — but balance between the 'good' and 'bad' types matters.", matters: "An unhealthy balance quietly raises heart-disease risk over years.", improve: "A fibre-rich, less-fried diet, regular activity and not smoking all help the balance." },
++  "creatinine": { what: "A waste product from muscles that your kidneys filter out — a window on kidney function.", matters: "A higher value can signal the kidneys aren't filtering well; it's read alongside other kidney markers.", improve: "Stay well hydrated and avoid unnecessary painkillers; a doctor should interpret a high value in context." },
++  "uric acid": { what: "A waste product from breaking down certain foods; cleared by the kidneys.", matters: "High levels can crystallise in joints and cause gout, and are linked to kidney stones.", improve: "Drink more water; cut back on red meat, organ meat, alcohol and sugary drinks." },
++  "calcium": { what: "The mineral behind strong bones and teeth, and also vital for nerves and muscles.", matters: "Out-of-range calcium can affect bones, muscles and heart rhythm and is read with vitamin D.", improve: "Dairy, ragi, sesame and leafy greens supply calcium; vitamin D helps you absorb it." },
++  "crp": { what: "A marker of inflammation anywhere in the body.", matters: "A raised value signals inflammation or infection somewhere — it's a flag, not a diagnosis.", improve: "Treat the underlying cause; an anti-inflammatory lifestyle (sleep, exercise, less processed food) helps baseline levels." },
++}
++
++function getBiomarkerInfo(name) {
++  const key = (name || "").toLowerCase()
++  for (const k in BIOMARKER_INFO) {
++    if (key.includes(k)) return BIOMARKER_INFO[k]
++  }
++  return null
++}
++
+ function BiomarkerModal({ biomarker, onClose }) {
+-  const [info, setInfo] = useState(null)
+-  const [loading, setLoading] = useState(true)
++  const [supp, setSupp] = useState(null)
+ 
+   useEffect(() => {
+     axios.get(`${API_BASE}/biomarker-info/${encodeURIComponent(biomarker.marker_name)}`)
+-      .then(res => setInfo(res.data))
+-      .catch(() => setInfo(null))
+-      .finally(() => setLoading(false))
++      .then(res => setSupp(res.data))
++      .catch(() => setSupp(null))
+   }, [])
+ 
++  const info = getBiomarkerInfo(biomarker.marker_name)
++  const min = biomarker.normal_range_min
++  const max = biomarker.normal_range_max
++  let direction = "Out of range"
++  if (min != null && biomarker.value < min) direction = "Low"
++  else if (max != null && biomarker.value > max) direction = "High"
++
+   return (
+     <div className="modal-backdrop fade-in" onClick={onClose}>
+       <div className="modal pop-in" onClick={(e) => e.stopPropagation()}>
+         <div className="modal-top">
+           <h3>{biomarker.marker_name}</h3>
+-          <Gauge value={biomarker.value} min={biomarker.normal_range_min} max={biomarker.normal_range_max} status="red" size={44} glow />
++          <Gauge value={biomarker.value} min={min} max={max} status="red" size={44} glow />
++        </div>
++        <div className="modal-value">
++          <span className={`modal-flag ${direction.toLowerCase()}`}>{direction}</span>
++          {biomarker.value} {biomarker.unit}
+         </div>
+-        <div className="modal-value">{biomarker.value} {biomarker.unit} &middot; out of healthy range</div>
+ 
+         <div className="modal-row">
+-          <div className="label">Normal Range</div>
+-          <div className="value">{biomarker.normal_range_min ?? "—"} to {biomarker.normal_range_max ?? "—"} {biomarker.unit}</div>
++          <div className="label">Healthy Range</div>
++          <div className="value">{min ?? "—"} to {max ?? "—"} {biomarker.unit}</div>
+         </div>
+ 
+-        {loading ? (
+-          <div className="modal-row"><div className="value dim">Loading suggestions...</div></div>
+-        ) : info && (
++        {info ? (
+           <>
+             <div className="modal-row">
+-              <div className="label">Suggested Supplement</div>
+-              <div className="value">{info.supplement}</div>
++              <div className="label">What it is</div>
++              <div className="value">{info.what}</div>
+             </div>
+             <div className="modal-row">
+-              <div className="label">Typical Approach</div>
+-              <div className="value">{info.typical_dose}</div>
++              <div className="label">What it means for you</div>
++              <div className="value">{info.matters}</div>
++            </div>
++            <div className="modal-row">
++              <div className="label">How to improve it</div>
++              <div className="value">{info.improve}</div>
+             </div>
+           </>
++        ) : (
++          <div className="modal-row">
++            <div className="value dim">This marker is outside the healthy range. Share it with your doctor to understand what it means for you.</div>
++          </div>
+         )}
+ 
++        {supp && supp.supplement && (
++          <div className="modal-row modal-supp">
++            <div className="label">Supplement note</div>
++            <div className="value">{supp.supplement}{supp.typical_dose ? ` — ${supp.typical_dose}` : ""}</div>
++          </div>
++        )}
++
++        <div className="modal-note">Educational only — not a diagnosis. Your diet plan below gives food-first steps.</div>
+         <button className="modal-close" onClick={onClose}>Close</button>
+       </div>
+     </div>
+@@ -372,6 +472,7 @@ function Dashboard({ userId, userName, onLogout }) {
+   const [file, setFile] = useState(null)
+   const [loading, setLoading] = useState(false)
+   const [loadingText, setLoadingText] = useState("")
++  const [dietLoading, setDietLoading] = useState(false)
+   const [reportData, setReportData] = useState(null)
+   const [dietPlan, setDietPlan] = useState(null)
+   const [dietTab, setDietTab] = useState("vegetarian")
+@@ -399,8 +500,7 @@ function Dashboard({ userId, userName, onLogout }) {
+ 
+   const handleGetDietPlan = async () => {
+     if (!reportData) return
+-    setLoading(true)
+-    setLoadingText("Building your personalized diet plan...")
++    setDietLoading(true)
+     setError(null)
+     try {
+       const res = await callWithRetry(() => axios.get(`${API_BASE}/diet-plan/${reportData.report_id}`))
+@@ -408,7 +508,7 @@ function Dashboard({ userId, userName, onLogout }) {
+     } catch (err) {
+       setError("Could not generate diet plan after retrying. Please try again.")
+     }
+-    setLoading(false)
++    setDietLoading(false)
+   }
+ 
+   const groups = reportData ? categorize(reportData.biomarkers) : []
+@@ -434,7 +534,7 @@ function Dashboard({ userId, userName, onLogout }) {
+         </div>
+       )}
+ 
+-      {loading && <Spinner text={loadingText} />}
++      {loading && <FactsLoader text={loadingText} />}
+       {error && <p className="status-text error">{error}</p>}
+ 
+       {reportData && !loading && (
+@@ -474,7 +574,9 @@ function Dashboard({ userId, userName, onLogout }) {
+           )}
+ 
+           <div className="section-title" style={{ marginTop: 44 }}>Your Diet Plan</div>
+-          {!dietPlan ? (
++          {dietLoading ? (
++            <FactsLoader text="Building your personalized diet plan..." />
++          ) : !dietPlan ? (
+             <div style={{ textAlign: "center" }}>
+               <button className="btn btn-glow" onClick={handleGetDietPlan}>Generate My Diet Plan</button>
+             </div>
