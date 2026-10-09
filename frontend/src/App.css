@@ -215,3 +215,4 @@ body { background: var(--black); color: var(--white); font-family: 'DM Sans', sa
 .modal-flag.out { background: rgba(232,122,106,0.16); color: var(--accent2); }
 .modal-supp { border-top: 1px solid var(--border); padding-top: 14px; }
 .modal-note { font-size: 11px; line-height: 1.5; color: var(--muted); font-style: italic; margin: 10px 0 16px; }
+.modal-flag.normal { background: rgba(200,245,66,0.16); color: var(--accent); }

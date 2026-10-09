@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import axios from 'axios'
 import './App.css'
 import { categorize } from './categorize'
@@ -326,19 +327,22 @@ function BiomarkerModal({ biomarker, onClose }) {
   const info = getBiomarkerInfo(biomarker.marker_name)
   const min = biomarker.normal_range_min
   const max = biomarker.normal_range_max
-  let direction = "Out of range"
+  let direction = "Normal"
   if (min != null && biomarker.value < min) direction = "Low"
   else if (max != null && biomarker.value > max) direction = "High"
+  else if (biomarker.status === "red") direction = "Out of range"
+  const isNormal = direction === "Normal"
+  const flagClass = direction === "Low" ? "low" : isNormal ? "normal" : "high"
 
-  return (
+  return createPortal(
     <div className="modal-backdrop fade-in" onClick={onClose}>
       <div className="modal pop-in" onClick={(e) => e.stopPropagation()}>
         <div className="modal-top">
           <h3>{biomarker.marker_name}</h3>
-          <Gauge value={biomarker.value} min={min} max={max} status="red" size={44} glow />
+          <Gauge value={biomarker.value} min={min} max={max} status={biomarker.status} size={44} glow />
         </div>
         <div className="modal-value">
-          <span className={`modal-flag ${direction.toLowerCase()}`}>{direction}</span>
+          <span className={`modal-flag ${flagClass}`}>{direction}</span>
           {biomarker.value} {biomarker.unit}
         </div>
 
@@ -347,38 +351,47 @@ function BiomarkerModal({ biomarker, onClose }) {
           <div className="value">{min ?? "—"} to {max ?? "—"} {biomarker.unit}</div>
         </div>
 
-        {info ? (
+        {info && (
+          <div className="modal-row">
+            <div className="label">What it is</div>
+            <div className="value">{info.what}</div>
+          </div>
+        )}
+
+        {isNormal ? (
+          <div className="modal-row">
+            <div className="label">Where you stand</div>
+            <div className="value">Good news — this one's sitting in the healthy range. Keep doing what you're doing.</div>
+          </div>
+        ) : info ? (
           <>
             <div className="modal-row">
-              <div className="label">What it is</div>
-              <div className="value">{info.what}</div>
-            </div>
-            <div className="modal-row">
-              <div className="label">What it means for you</div>
+              <div className="label">{direction === "High" ? "What a high level can mean" : "What a low level can mean"}</div>
               <div className="value">{info.matters}</div>
             </div>
             <div className="modal-row">
               <div className="label">How to improve it</div>
-              <div className="value">{info.improve}</div>
+              <div className="value">{info.improve} You'll find specific foods in your diet plan below.</div>
             </div>
           </>
         ) : (
           <div className="modal-row">
-            <div className="value dim">This marker is outside the healthy range. Share it with your doctor to understand what it means for you.</div>
+            <div className="value dim">This one's outside the healthy range. Share it with your doctor to understand what it means for you, and check your diet plan below for food-first steps.</div>
           </div>
         )}
 
-        {supp && supp.supplement && (
+        {supp && supp.supplement && !isNormal && (
           <div className="modal-row modal-supp">
             <div className="label">Supplement note</div>
             <div className="value">{supp.supplement}{supp.typical_dose ? ` — ${supp.typical_dose}` : ""}</div>
           </div>
         )}
 
-        <div className="modal-note">Educational only — not a diagnosis. Your diet plan below gives food-first steps.</div>
+        <div className="modal-note">Educational only — not a diagnosis. Always confirm with your doctor.</div>
         <button className="modal-close" onClick={onClose}>Close</button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -403,8 +416,8 @@ function BiomarkerPanel({ group, onSelect, index }) {
           {group.items.map((b, i) => (
             <button
               key={i}
-              className={`gcard ${b.status === "red" ? "clickable" : ""}`}
-              onClick={() => b.status === "red" && onSelect(b)}
+              className="gcard clickable"
+              onClick={() => onSelect(b)}
               style={{ animationDelay: `${i * 40}ms` }}
             >
               <Gauge value={b.value} min={b.normal_range_min} max={b.normal_range_max} status={b.status} animateDelay={index * 70 + i * 40} />
@@ -412,7 +425,7 @@ function BiomarkerPanel({ group, onSelect, index }) {
                 <div className="gname">{b.marker_name}</div>
                 <div className="gvalue">{b.value}<span className="unit">{b.unit}</span></div>
               </div>
-              {b.status === "red" && <div className="gcard-tap">tap for details</div>}
+              <div className="gcard-tap">tap to learn</div>
             </button>
           ))}
         </div>
@@ -561,7 +574,7 @@ function Dashboard({ userId, userName, onLogout }) {
           <div className="section-title">
             Biomarkers
             <span className="count">
-              {reportData.biomarkers.length} tested &middot; {reportData.biomarkers.filter(b => b.status === "red").length} flagged &middot; tap a red one for details
+              {reportData.biomarkers.length} tested &middot; {reportData.biomarkers.filter(b => b.status === "red").length} flagged &middot; tap any marker to learn about it
             </span>
           </div>
 
