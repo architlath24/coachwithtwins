@@ -1,547 +1,269 @@
-# FitTwins — Cloud-Native Fitness & Biological Age Platform
+# FitTwins — Cloud-Native Fitness & Biological-Age Platform
 
-FitTwins is a real fitness coaching platform combined with an AI-powered Biological Age assessment application.
+FitTwins is a fitness-coaching website combined with an AI-assisted **Biological Age** assessment app. A user uploads a blood-test report, the backend extracts biomarkers with Google Gemini, computes a biological age using the published PhenoAge model, and returns categorized results and a food-first diet plan.
 
-The project was built end-to-end using AWS, Terraform, Docker, Jenkins CI/CD, FastAPI, React, PostgreSQL, Amazon RDS, S3, Secrets Manager, Application Load Balancing, CloudWatch, and HTTPS.
+The point of this repository is not just that the app runs — it is a hands-on **AWS / DevOps engineering project**: VPC networking, an Application Load Balancer, EC2 + Docker, managed PostgreSQL on RDS, S3, Secrets Manager, IAM, Terraform, and a Jenkins CI/CD pipeline — built, operated, and debugged end to end.
+
+**Live:** https://fitwithtwins.com/ · **Biological Age app:** https://fitwithtwins.com/biological-age/ · **API:** https://fitwithtwins.com/api/
 
 ---
 
 ## Architecture
 
-Internet
-  |
-  v
-Cloudflare DNS
-  |
-  v
-AWS Application Load Balancer
-  |
-  +-- HTTP :80  -> HTTPS redirect
-  |
-  +-- HTTPS :443
-          |
-          v
-      EC2 Instance
-      Docker Host
-          |
-          v
-        Nginx
-          |
-          +----------------------+
-          |                      |
-          v                      v
-   Main FitTwins Site     Biological Age React App
+```
+                         Internet
+                            |
+                     Cloudflare DNS
+                            |
+                            v
+         AWS Application Load Balancer (fittwins-alb)
+            :80  --(HTTP 301)-->  :443 (ACM TLS cert)
+                            |
+                            v
+                    EC2 t3.micro (Docker host)
+          +-----------------------------------------------+
+          |  fittwins-frontend  (Nginx :80)               |
+          |    /                -> static coaching site   |
+          |    /biological-age/ -> React (Vite) SPA       |
+          |    /api/            -> reverse proxy ------+   |
+          |                                            |   |
+          |  fittwins-backend  (FastAPI :8000) <-------+   |
+          |    on Docker network "fittwins-net"           |
+          +-----------------------|-----------------------+
+                                  |
+            +---------------------+---------------------+
+            |                     |                     |
+            v                     v                     v
+     RDS PostgreSQL 16        Amazon S3          Secrets Manager
+     (private subnets)     (report storage)   (DB + Gemini creds)
                                   |
                                   v
-                             FastAPI Backend
-                                  |
-                     +------------+------------+
-                     |            |            |
-                     v            v            v
-                   RDS           S3       Secrets Manager
-                PostgreSQL
-                                  |
-                                  v
-                           Google Gemini API
+                         Google Gemini API
+                     (biomarker extraction)
+
+   Jenkins (CI/CD) runs on the same EC2 instance (:8080, SG-restricted).
+```
+
+A single EC2 instance is registered to the ALB target group. This is a deliberate cost/learning trade-off, not a high-availability design — see [Engineering trade-offs](#engineering-trade-offs).
 
 ---
 
-## Live Application
+## Request routing
 
-### Main Coaching Website
+Nginx in the frontend container owns all HTTP routing:
 
-https://fitwithtwins.com/
+| Path | Serves |
+|---|---|
+| `/` | Static coaching homepage (`index.html`) |
+| `/biological-age/` | React SPA (Vite `base: '/biological-age/'`, with SPA fallback) |
+| `/api/` | Reverse proxy to `http://fittwins-backend:8000/` |
 
-### Biological Age Application
-
-https://fitwithtwins.com/biological-age/
-
-### Backend API
-
-https://fitwithtwins.com/api/
+`client_max_body_size 25M` is set so blood-report PDFs don't hit an HTTP 413 at the proxy before reaching FastAPI.
 
 ---
 
-## Key Features
+## API
 
-### Fitness Coaching Website
+FastAPI backend (OpenAPI at `/api/openapi.json`):
 
-- FitTwins coaching landing page
-- Fitness-focused content and CTAs
-- Intake form
-- Biological Age application integration
-- Nginx-based static content delivery
-
-### Biological Age Application
-
-Users can:
-
-1. Create an account
-2. Log in securely
-3. Upload a blood report
-4. Extract biomarkers using Google Gemini
-5. View biomarker results
-6. Identify out-of-range values
-7. Calculate Biological Age
-8. View categorized biomarkers
-9. Generate personalized food-first diet recommendations
-10. Track previous reports
-
-### Backend
-
-The FastAPI backend provides:
-
-- User registration
-- Authentication
-- Password hashing
-- Blood report processing
-- Biomarker extraction
-- Biological Age calculation
-- Diet-plan generation
-- PostgreSQL persistence
-- S3 integration
+| Method | Route | Purpose |
+|---|---|---|
+| `GET` | `/` | Liveness check |
+| `POST` | `/signup` | Create a user (JSON body; bcrypt-hashed password) |
+| `POST` | `/login` | Authenticate a user |
+| `POST` | `/upload-report?user_id=` | Upload a PDF report (multipart) |
+| `GET` | `/diet-plan/{report_id}` | Generate a diet plan for a report |
+| `GET` | `/biomarker-info/{marker_name}` | Supplement/guidance lookup for a marker |
 
 ---
 
-## Technology Stack
+## Biological-age pipeline
+
+1. User uploads a blood-report PDF through the React app.
+2. Request passes Nginx → FastAPI.
+3. The backend extracts the PDF text layer with **pypdf**. If the extracted text is too short (e.g. a scanned/image-only report), it falls back to sending the original PDF to Gemini's native file processing.
+4. Gemini returns biomarkers as JSON; a tolerant parser handles fenced or prose-wrapped responses.
+5. Each marker is classified in/out of range.
+6. Biological age is computed with the **PhenoAge model (Levine et al., 2018)**, including conventional→SI unit conversion. If the required markers aren't all present, it falls back to a simple estimate and says so.
+7. Report metadata + biomarkers are stored in PostgreSQL; the PDF is stored in S3 when running in AWS mode.
+8. Results are returned to the React dashboard.
+
+Biomarkers are grouped into categories (Iron Studies, Lipid Profile, Liver, Kidney, Blood Count, Thyroid, Vitamins & Minerals, Glucose/Metabolic, Other).
+
+---
+
+## Technology stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | React, Vite |
-| Backend | Python, FastAPI |
-| Database | PostgreSQL |
-| ORM | SQLAlchemy |
-| AI | Google Gemini |
-| Authentication | bcrypt |
-| Web Server | Nginx |
-| Containers | Docker |
-| CI/CD | Jenkins |
-| Cloud | AWS |
-| Infrastructure as Code | Terraform |
-| Load Balancing | AWS Application Load Balancer |
-| HTTPS | AWS ACM |
-| Object Storage | Amazon S3 |
-| Database Hosting | Amazon RDS |
-| Secrets | AWS Secrets Manager |
-| Monitoring | Amazon CloudWatch |
+| Frontend | React 19, Vite 8 |
+| Backend | Python 3.12, FastAPI, SQLAlchemy |
+| AI | Google Gemini, pypdf |
+| Auth | bcrypt (passlib) |
+| Web server / proxy | Nginx |
+| Containers | Docker (multi-stage frontend build) |
+| CI/CD | Jenkins (pipeline-as-code) |
+| IaC | Terraform |
 | DNS | Cloudflare |
-| Kubernetes | Kubernetes manifests |
+| Cloud | AWS (see below) |
 
 ---
 
-## AWS Infrastructure
+## AWS services used
 
-Terraform manages the AWS infrastructure in `infrastructure/`.
+| Service | Role in this project |
+|---|---|
+| **EC2** (t3.micro, Amazon Linux 2) | Docker host for both containers + Jenkins |
+| **VPC** (subnets, Internet Gateway, route tables) | Network isolation; public subnet for compute, private subnets for RDS |
+| **Security Groups** | Instance/ALB and RDS ingress control |
+| **Elastic IP** | Stable public address for the instance |
+| **Elastic Load Balancing** (ALB + target group) | Public entry point, HTTP→HTTPS redirect, health checks |
+| **ACM** | TLS certificate for `fitwithtwins.com` |
+| **RDS** (PostgreSQL 16, db.t3.micro) | Managed database in private subnets, not publicly accessible |
+| **S3** | Blood-report object storage (`reports/` prefix) |
+| **Secrets Manager** | DB and Gemini credentials, read at runtime via IAM role |
+| **IAM** | EC2 instance role + least-privilege policy (S3, Secrets Manager, CloudWatch logs) |
+| **CloudWatch + Budgets + SNS** | Billing alarm, monthly budget, email alerts |
 
-### Networking
-
-- VPC
-- Public subnet
-- Private subnets
-- Internet Gateway
-- Route table
-- Security groups
-
-### Compute
-
-- Amazon EC2
-- Elastic IP
-- Docker runtime
-- Jenkins CI/CD server
-
-### Database
-
-- Amazon RDS PostgreSQL
-- Private database subnets
-- Dedicated RDS security group
-
-### Load Balancing
-
-- Application Load Balancer
-- HTTP listener
-- HTTPS listener
-- HTTP to HTTPS redirect
-- Target group
-- EC2 target attachment
-
-### Security and Storage
-
-- AWS ACM certificate
-- AWS Secrets Manager
-- Amazon S3
-- IAM role and instance profile
-- Restricted Jenkins access
-
-### Monitoring
-
-- CloudWatch Agent
-- EC2 CPU, memory and disk metrics
-- CloudWatch dashboard
-- High CPU alarm
+> Honesty note: broader CloudWatch **application/host** monitoring (metrics dashboard, CPU/memory alarms) is on the roadmap, not yet implemented. Only billing monitoring is live today.
 
 ---
 
-## CI/CD Pipeline
+## CI/CD pipeline (Jenkins)
 
-Jenkins runs on the EC2 infrastructure and deploys the application from GitHub.
+Jenkins runs on the EC2 instance and uses the `Jenkinsfile` in this repo (pipeline-as-code, built from `main`):
 
-Developer
-  |
-  v
-GitHub
-  |
-  v
-Jenkins
-  |
-  +-- Checkout
-  +-- Docker Build
-  +-- Deploy Container
-  +-- Application Verification
-  |
-  v
-Production EC2
+```
+Checkout -> Build Images -> Deploy Backend -> Deploy Frontend -> Verify
+```
 
-The pipeline:
-
-1. Checks out the latest Git commit
-2. Builds the Docker image
-3. Removes the previous frontend container
-4. Starts the new container
-5. Connects it to the Docker network
-6. Runs HTTP smoke tests
-7. Reports build success or failure
+- **Build Images** — builds the backend and frontend images, tagged with the short Git SHA (and `latest`) for traceability and rollback.
+- **Deploy Backend** — renames the current backend container to `fittwins-backend-prev` (kept for rollback), then starts the new one on `fittwins-net`.
+- **Deploy Frontend** — recreates the frontend container and reloads Nginx so it re-resolves the backend's container IP.
+- **Verify** — smoke-tests `/`, `/biological-age/`, and `/api/openapi.json` and fails the build if any route is unhealthy.
 
 ---
 
-## Docker Architecture
+## Repository structure
 
-The main Docker image uses a multi-stage build.
-
-Node.js Build Stage
-  |
-  +-- npm ci
-  +-- React/Vite build
-  |
-  v
-Nginx Alpine Runtime
-  |
-  +-- Main FitTwins website
-  +-- Biological Age React application
-  +-- FastAPI reverse proxy
-
-Nginx routes:
-
-- `/` -> Main FitTwins website
-- `/biological-age/` -> React Biological Age application
-- `/api/` -> FastAPI backend
-
----
-
-## Biological Age Flow
-
-User
-  |
-  v
-React Application
-  |
-  | Upload blood report
-  v
-FastAPI Backend
-  |
-  v
-Google Gemini
-  |
-  | Structured biomarker extraction
-  v
-Biomarker Processing
-  |
-  +-- Categorization
-  +-- Normal/out-of-range classification
-  +-- Biological Age calculation
-  |
-  v
-PostgreSQL
-  |
-  v
-React Dashboard
-
-Biomarkers are grouped into categories including:
-
-- Iron Studies
-- Lipid Profile
-- Liver Function
-- Kidney Function
-- Blood Count
-- Thyroid
-- Vitamins & Minerals
-- Glucose & Metabolic
-- Other
-
----
-
-## Database
-
-PostgreSQL is hosted on Amazon RDS.
-
-Application tables include:
-
-- `users`
-- `reports`
-- `biomarkers`
-
-The backend uses SQLAlchemy for database access.
-
-RDS is deployed in private subnets and is not directly exposed to the public internet.
-
----
-
-## Security
-
-Security controls implemented include:
-
-- HTTPS through AWS ACM
-- HTTP to HTTPS redirection
-- Private RDS deployment
-- Dedicated RDS security group
-- EC2 IAM role
-- AWS Secrets Manager
-- bcrypt password hashing
-- Restricted Jenkins access
-- Security-group based service communication
-- Secrets excluded from Git
+```
+coachwithtwins/
+├── index.html              # Static coaching homepage
+├── fittwins-form.html      # Intake form (WhatsApp / UPI deep links)
+├── frontend/               # React + Vite biological-age SPA
+│   ├── src/ (App.jsx, categorize.js, ...)
+│   └── vite.config.js      # base: '/biological-age/'
+├── backend/                # FastAPI service
+│   ├── main.py             # Routes
+│   ├── models.py           # SQLAlchemy models (users, reports, biomarkers)
+│   ├── database.py         # Engine; Secrets Manager in AWS, env var locally
+│   ├── gemini_service.py   # pypdf extraction + Gemini calls
+│   ├── biomarker_utils.py  # PhenoAge calc, unit conversion, JSON parsing
+│   ├── aws_config.py       # Secrets Manager helper
+│   └── requirements.txt
+├── Dockerfile              # Frontend multi-stage build (Node -> Nginx)
+├── backend/Dockerfile      # Backend (python:3.12-slim)
+├── nginx.conf              # Routing + proxy + upload limit
+├── Jenkinsfile             # CI/CD pipeline
+├── infrastructure/         # Terraform (VPC, EC2, RDS, ALB, IAM, S3, ...)
+└── k8s/                    # Kubernetes manifests (learning artifact; not the live deployment)
+```
 
 ---
 
 ## Infrastructure as Code
 
-Terraform manages:
+Terraform in `infrastructure/` manages the VPC, subnets, IGW, route table, security groups, EC2 + Elastic IP, RDS + subnet group, ALB + listeners + target group, ACM certificate, IAM role/policy/instance profile, S3 bucket, and the Secrets Manager container for the DB secret.
 
-- VPC
-- Public subnet
-- Private subnets
-- Internet Gateway
-- Route table
-- Security groups
-- EC2
-- Elastic IP
-- RDS PostgreSQL
-- RDS subnet group
-- Application Load Balancer
-- Target group
-- HTTP listener
-- HTTPS listener
-- ACM certificate
-- IAM role
-- IAM instance profile
-- S3
-- Secrets Manager
+```bash
+cd infrastructure
+terraform init
+terraform validate
+terraform plan      # review before every apply
+terraform apply
+```
 
-Typical workflow:
-
-    cd infrastructure
-    terraform init
-    terraform validate
-    terraform plan
-    terraform apply
-
-The current Terraform configuration has been verified against AWS and returns:
-
-    No changes. Your infrastructure matches the configuration.
+> State is currently local and git-ignored. Migrating to a remote backend (S3 + DynamoDB lock) is on the roadmap. The Gemini secret value, Cloudflare DNS, and the billing/CloudWatch resources are managed outside this Terraform.
 
 ---
 
-## Kubernetes
+## Engineering trade-offs
 
-The repository also contains Kubernetes manifests under `k8s/`.
+Deliberate decisions worth understanding rather than copying blindly:
 
-They demonstrate:
-
-- Kubernetes Deployment
-- Multiple replicas
-- Resource requests and limits
-- Service exposure
-- Container orchestration
-
-The current production deployment uses Docker on EC2 with Jenkins. The Kubernetes manifests are retained as part of the project's container-orchestration implementation and learning path.
+- **Single EC2 behind an ALB.** The ALB gives TLS termination, a health check, and a stable DNS name, but there's one instance behind it, so this is *not* HA. Chosen to keep cost low while still practicing ALB/target-group operations. Horizontal scaling or an Auto Scaling Group would be the next step for real availability.
+- **Docker-on-EC2 instead of ECS/EKS.** Keeps the Docker/Nginx/Linux operational surface visible and debuggable. Kubernetes manifests are kept in `k8s/` as a learning artifact, not the production path.
+- **Jenkins co-located with the app.** Simple and cheap, but it shares the instance's memory with the app — a known pressure point addressed with a swap file.
 
 ---
 
-## Repository Structure
+## Operational notes / incidents
 
-coachwithtwins/
-|
-+-- backend/
-|   +-- main.py
-|   +-- database.py
-|   +-- models.py
-|   +-- schemas.py
-|   +-- gemini_service.py
-|   +-- biomarker_utils.py
-|   +-- supplement_guide.py
-|   +-- aws_config.py
-|   +-- create_tables.py
-|   +-- requirements.txt
-|   +-- Dockerfile
-|
-+-- frontend/
-|   +-- src/
-|   |   +-- App.jsx
-|   |   +-- App.css
-|   |   +-- index.css
-|   |   +-- main.jsx
-|   |   +-- categorize.js
-|   +-- package.json
-|   +-- vite.config.js
-|
-+-- infrastructure/
-|   +-- main.tf
-|   +-- variables.tf
-|   +-- outputs.tf
-|   +-- deploy.sh
-|
-+-- k8s/
-|   +-- deployment.yaml
-|   +-- service.yaml
-|
-+-- Dockerfile
-+-- Jenkinsfile
-+-- nginx.conf
-+-- index.html
-+-- fittwins-form.html
-+-- .gitignore
-+-- README.md
+Real problems diagnosed and fixed (the engineering story behind this project):
+
+- **Intermittent TLS timeouts** traced to one ALB subnet lacking a default route to the Internet Gateway; fixed by correcting the route-table association.
+- **HTTP 413 on uploads** traced to the Nginx body-size limit; raised to 25 MB.
+- **Transient 502 after a backend swap** — Nginx resolves its upstream hostname once at startup, so a new backend container (new IP) left Nginx pointing at the old one. Fixed with `nginx -s reload`, now built into the pipeline.
+- **Deployment drift** — production hotfixes once lived only in a running container, not in Git or CI. Resolved by committing them, building a reproducible SHA-tagged image, and extending the pipeline to deploy the backend with a rollback container.
 
 ---
 
-## Local Development
+## Security & hardening roadmap
 
-### Frontend
+Implemented: HTTPS/ACM with HTTP→HTTPS redirect, bcrypt password hashing, RDS in private subnets (not publicly accessible), secrets in Secrets Manager (not in source), least-privilege IAM for the instance role, secrets git-ignored.
 
-    cd frontend
-    npm install
-    npm run dev
+In progress / planned (tracked, prioritized):
 
-### Backend
+1. Token-based authentication and per-user authorization on report routes.
+2. Move login credentials out of the query string into a request body.
+3. Tighten security groups (restrict SSH; front all public traffic through the ALB).
+4. Enable RDS encryption at rest and automated backups; add deletion protection.
+5. S3 public-access block, versioning, and a lifecycle policy for reports.
+6. Upload hardening: filename sanitisation, content-type/size validation, temp-file cleanup.
+7. Consent and medical-disclaimer handling for health data.
 
-    cd backend
-    pip install -r requirements.txt
-    uvicorn main:app --reload
-
-### Docker
-
-    docker build -t fittwins-frontend .
-
-    docker run -d \
-      --name fittwins-frontend \
-      -p 80:80 \
-      fittwins-frontend
+> This is a learning/portfolio project. It is **not** a certified medical device and makes no regulatory-compliance claims. Biological-age output is informational only.
 
 ---
 
-## Deployment Flow
+## Local development
 
-git push
-  |
-  v
-GitHub
-  |
-  v
-Jenkins
-  |
-  v
-Docker Build
-  |
-  v
-Docker Container
-  |
-  v
-EC2
-  |
-  v
-Application Load Balancer
-  |
-  v
-https://fitwithtwins.com
+**Frontend**
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
----
+**Backend**
+```bash
+cd backend
+pip install -r requirements.txt
+# Local mode reads DATABASE_URL and GEMINI_API_KEY from a .env file
+uvicorn main:app --reload
+```
 
-## DevOps Concepts Demonstrated
+**Docker (frontend image)**
+```bash
+docker build -t fittwins-frontend .
+docker run -d --name fittwins-frontend -p 80:80 fittwins-frontend
+```
 
-### Infrastructure
-
-- Infrastructure as Code
-- AWS networking
-- Public/private subnet design
-- Security groups
-- IAM
-- Load balancing
-- TLS certificates
-- Managed databases
-
-### Containers
-
-- Docker image creation
-- Multi-stage builds
-- Container networking
-- Nginx reverse proxy
-- Container lifecycle management
-
-### CI/CD
-
-- Git-based workflow
-- Jenkins pipelines
-- Automated Docker builds
-- Automated deployment
-- Deployment verification
-- Failure handling
-
-### Cloud
-
-- EC2
-- RDS
-- S3
-- ACM
-- Secrets Manager
-- CloudWatch
-- IAM
-- ALB
-
-### Application Engineering
-
-- React
-- FastAPI
-- PostgreSQL
-- REST APIs
-- Authentication
-- AI integration
-- Structured data extraction
+The backend runs in AWS mode when `AWS_ENV=true` (credentials from Secrets Manager via the instance role); otherwise it reads `DATABASE_URL` and `GEMINI_API_KEY` from the environment.
 
 ---
 
-## Project Status
+## Roadmap
 
-| Component | Status |
-|---|---|
-| FitTwins coaching website | Live |
-| Biological Age application | Live |
-| FastAPI backend | Deployed |
-| PostgreSQL RDS | Deployed |
-| S3 integration | Configured |
-| AWS Secrets Manager | Configured |
-| Application Load Balancer | Live |
-| HTTPS / ACM | Live |
-| Docker | Production |
-| Jenkins CI/CD | Working |
-| Terraform | Infrastructure managed |
-| CloudWatch | Configured |
-| Kubernetes manifests | Included |
+- Wire real application/host monitoring (CloudWatch agent, dashboard, CPU/memory/target-health alarms).
+- Automated tests + build/config validation in CI.
+- Remote Terraform state with locking; import existing drift.
+- The security items listed above.
+- Paid coaching plans with server-side-verified payments (Razorpay/Stripe), signed webhooks, and idempotency.
 
 ---
 
 ## Author
 
-**Archit Lath**
-
-Cloud / DevOps Engineer
-
-AWS · Terraform · Docker · Jenkins · Kubernetes · Python · FastAPI · React · PostgreSQL · Nginx · CloudWatch
+**Archit Lath** — Cloud / DevOps Engineer
+AWS · Terraform · Docker · Jenkins · Python · FastAPI · React · PostgreSQL · Nginx
