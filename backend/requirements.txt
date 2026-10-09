@@ -52,3 +52,4 @@ uvicorn==0.52.4
 websockets==16.1.1
 boto3==1.40.45
 pypdf==6.1.2
+PyJWT==2.10.1

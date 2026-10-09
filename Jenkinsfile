@@ -30,6 +30,7 @@ pipeline {
                     docker rename fittwins-backend fittwins-backend-prev 2>/dev/null || true
                     docker stop fittwins-backend-prev 2>/dev/null || true
                     docker run -d --name fittwins-backend --network fittwins-net --restart unless-stopped \
+                      --env-file /var/lib/jenkins/secrets/fittwins-backend.env \
                       ${BACKEND_ENV} fittwins-backend:latest
                 '''
             }

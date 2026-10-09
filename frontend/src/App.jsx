@@ -74,15 +74,16 @@ function LoginScreen({ onLogin }) {
           })
         )
 
-        onLogin(res.data.user_id, res.data.name)
+        onLogin(res.data.user_id, res.data.name, res.data.access_token)
       } else {
         const res = await callWithRetry(() =>
-          axios.post(
-            `${API_BASE}/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
-          )
+          axios.post(`${API_BASE}/login`, {
+            email,
+            password,
+          })
         )
 
-        onLogin(res.data.user_id, res.data.name)
+        onLogin(res.data.user_id, res.data.name, res.data.access_token)
       }
     } catch (err) {
       if (mode === "signup") {
@@ -388,7 +389,7 @@ function Dashboard({ userId, userName, onLogout }) {
     try {
       const formData = new FormData()
       formData.append("file", file)
-      const res = await callWithRetry(() => axios.post(`${API_BASE}/upload-report?user_id=${userId}`, formData))
+      const res = await callWithRetry(() => axios.post(`${API_BASE}/upload-report`, formData))
       setReportData(res.data)
     } catch (err) {
       setError("Upload failed after retrying. Please try again in a moment.")
@@ -513,14 +514,49 @@ function Dashboard({ userId, userName, onLogout }) {
   )
 }
 
-function App() {
-  const [session, setSession] = useState(null)
+function setAuthToken(token) {
+  if (token) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`
+    try { localStorage.setItem("ft_token", token) } catch { /* ignore */ }
+  } else {
+    delete axios.defaults.headers.common["Authorization"]
+    try { localStorage.removeItem("ft_token") } catch { /* ignore */ }
+    try { localStorage.removeItem("ft_session") } catch { /* ignore */ }
+  }
+}
 
-  if (!session) {
-    return <LoginScreen onLogin={(userId, name) => setSession({ userId, userName: name })} />
+function loadStoredSession() {
+  try {
+    const token = localStorage.getItem("ft_token")
+    const raw = localStorage.getItem("ft_session")
+    if (token && raw) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`
+      return JSON.parse(raw)
+    }
+  } catch { /* ignore */ }
+  return null
+}
+
+function App() {
+  const [session, setSession] = useState(loadStoredSession)
+
+  const handleLogin = (userId, name, token) => {
+    setAuthToken(token)
+    const next = { userId, userName: name }
+    try { localStorage.setItem("ft_session", JSON.stringify(next)) } catch { /* ignore */ }
+    setSession(next)
   }
 
-  return <Dashboard userId={session.userId} userName={session.userName} onLogout={() => setSession(null)} />
+  const handleLogout = () => {
+    setAuthToken(null)
+    setSession(null)
+  }
+
+  if (!session) {
+    return <LoginScreen onLogin={handleLogin} />
+  }
+
+  return <Dashboard userId={session.userId} userName={session.userName} onLogout={handleLogout} />
 }
 
 export default App

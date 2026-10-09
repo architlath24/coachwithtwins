@@ -8,3 +8,8 @@ class UserCreate(BaseModel):
     height: Optional[float] = None
     weight: Optional[float] = None
     age: Optional[int] = None
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str

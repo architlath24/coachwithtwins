@@ -7,9 +7,10 @@ import boto3
 
 from database import SessionLocal
 from models import User, Report, Biomarker
-from schemas import UserCreate
+from schemas import UserCreate, LoginRequest
 from gemini_service import extract_biomarkers
 from biomarker_utils import calculate_status, parse_gemini_json, calculate_biological_age
+from auth import create_access_token, get_current_user_id
 
 if os.getenv("AWS_ENV") == "true":
     s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "ap-south-1"))
@@ -56,17 +57,35 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"message": "User created", "user_id": new_user.id}
+    token = create_access_token(new_user.id)
+    return {
+        "message": "User created",
+        "user_id": new_user.id,
+        "name": new_user.name,
+        "access_token": token,
+        "token_type": "bearer",
+    }
 
 @app.post("/login")
-def login(email: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
-    if not user or not pwd_context.verify(password, user.password):
+def login(creds: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == creds.email).first()
+    if not user or not pwd_context.verify(creds.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    return {"message": "Login successful", "user_id": user.id, "name": user.name}
+    token = create_access_token(user.id)
+    return {
+        "message": "Login successful",
+        "user_id": user.id,
+        "name": user.name,
+        "access_token": token,
+        "token_type": "bearer",
+    }
 
 @app.post("/upload-report")
-def upload_report(user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+def upload_report(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -140,10 +159,16 @@ from gemini_service import generate_diet_plan
 from supplement_guide import get_supplement_info
 
 @app.get("/diet-plan/{report_id}")
-def get_diet_plan(report_id: int, db: Session = Depends(get_db)):
+def get_diet_plan(
+    report_id: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
     report = db.query(Report).filter(Report.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
+    if report.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this report")
 
     user = db.query(User).filter(User.id == report.user_id).first()
     biomarkers = db.query(Biomarker).filter(Biomarker.report_id == report_id).all()
@@ -171,6 +196,6 @@ def get_diet_plan(report_id: int, db: Session = Depends(get_db)):
 
 
 @app.get("/biomarker-info/{marker_name}")
-def biomarker_info(marker_name: str):
+def biomarker_info(marker_name: str, user_id: int = Depends(get_current_user_id)):
     info = get_supplement_info(marker_name)
     return {"marker_name": marker_name, **info}
